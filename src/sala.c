@@ -11,6 +11,7 @@ static Sala *sala_nova(const char *nome, Color cor) {
     s->proxSala = s;
     s->antSala = s;
     s->qtdObstaculos = 0;
+    s->qntdInterativo = 0;
     return s;
 }
 
@@ -36,6 +37,9 @@ Sala *salas_criar(void) {
     salao->obstaculos[0] = (Rectangle){500, 300, 200, 100};
     salao->qtdObstaculos = 1;
     
+    salao->interativos[0] =(Interativo){ OBJ_BILHETE, (Rectangle){ 900, 200, 30, 20 }, "Ler o bilhete" };
+    salao->qntdInterativo = 1;
+
     return salao;
 }
 

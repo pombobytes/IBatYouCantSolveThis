@@ -27,6 +27,8 @@ typedef struct {
     Vector2 posicaoJogador;
     Sala *salas;
     Sala *salaAtual;
+    int interativoProximo;   // índice do objeto perto do Bruno na sala atual, ou -1
+    const char *textoDialogo;   // texto mostrado no estado DIALOGO
 } Jogo;
 
 void jogo_iniciar(Jogo *jogo);
