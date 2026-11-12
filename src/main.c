@@ -22,6 +22,7 @@ int main(void) {
         EndDrawing();
     }
 
+    jogo_finalizar(&jogo);
     CloseWindow();
     return 0;
 }

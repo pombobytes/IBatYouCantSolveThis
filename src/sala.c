@@ -14,7 +14,7 @@ static Sala *sala_nova(const char *nome, Color cor) {
 }
 
 Sala *salas_criar(void) {
-    Sala *salao   = sala_nova("Salao de Festas", (Color){ 100, 20, 35, 255 });
+    Sala *salao   = sala_nova("Salão de Festas", (Color){ 100, 20, 35, 255 });
     Sala *jardim  = sala_nova("Jardim de Inverno",(Color){ 30, 65, 40, 255 });
     Sala *galeria = sala_nova("Galeria de Arte", (Color){ 25, 35, 70, 255 });
 
