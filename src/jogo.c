@@ -24,11 +24,24 @@ static void atualizar_menu(Jogo *jogo)
     }
 }
 
+//colisao
+static bool colide_com_sala(const Jogo *jogo) {
+    Rectangle bruno = {jogo->posicaoJogador.x,jogo->posicaoJogador.y,LARGURA_JOGADOR, ALTURA_JOGADOR};
+    for (int i = 0; i < jogo->salaAtual->qtdObstaculos; i++) {
+        if (CheckCollisionRecs(bruno, jogo->salaAtual->obstaculos[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void atualizar_explorando(Jogo *jogo)
 {
     float dt = GetFrameTime();
     float passo = VELOCIDADE_JOGADOR * dt;
 
+    //movimentação
+    float yAntigo = jogo->posicaoJogador.y;
     if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))
     {
         jogo->posicaoJogador.y -= passo;
@@ -37,6 +50,11 @@ static void atualizar_explorando(Jogo *jogo)
     {
         jogo->posicaoJogador.y += passo;
     }
+    if(colide_com_sala(jogo)){
+        jogo->posicaoJogador.y = yAntigo;
+    }
+
+    float xAntigo = jogo->posicaoJogador.x;
     if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT))
     {
         jogo->posicaoJogador.x += passo;
@@ -45,7 +63,11 @@ static void atualizar_explorando(Jogo *jogo)
     {
         jogo->posicaoJogador.x -= passo;
     }
+    if(colide_com_sala(jogo)){
+        jogo->posicaoJogador.x = xAntigo;
+    }
 
+    //troca de sala
     int larguraTela = GetScreenWidth();
     if (jogo->posicaoJogador.x + LARGURA_JOGADOR > larguraTela)
     {
@@ -58,6 +80,18 @@ static void atualizar_explorando(Jogo *jogo)
         jogo->posicaoJogador.x = larguraTela - LARGURA_JOGADOR;
     }
 
+    int alturaTela = GetScreenHeight();
+    //borda de cima
+    if(jogo->posicaoJogador.y < 0){
+        jogo->posicaoJogador.y = 0;
+    }
+
+    //borda de baixo
+    if((jogo->posicaoJogador.y + ALTURA_JOGADOR) > alturaTela){
+        jogo->posicaoJogador.y = alturaTela - ALTURA_JOGADOR;
+    }
+
+    //tempo
     jogo->tempoRestante -= dt;
     if (jogo->tempoRestante <= 0)
     {
@@ -111,6 +145,11 @@ static void desenhar_explorando(const Jogo *jogo)
 
     // nome da sala no canto superior esquerdo
     DrawText(jogo->salaAtual->nome, 20, 20, 30, WHITE);
+    
+    for (int i = 0; i < jogo->salaAtual->qtdObstaculos; i++) {
+        DrawRectangleRec(jogo->salaAtual->obstaculos[i], DARKGRAY);
+    }
+    
     // jogador (BRUNO)
     DrawRectangle((int)jogo->posicaoJogador.x, (int)jogo->posicaoJogador.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
 
@@ -158,3 +197,4 @@ void jogo_finalizar(Jogo *jogo)
     jogo->salas = NULL;
     jogo->salaAtual = NULL;
 }
+

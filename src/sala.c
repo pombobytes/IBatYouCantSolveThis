@@ -10,6 +10,7 @@ static Sala *sala_nova(const char *nome, Color cor) {
     s->corFundo = cor; 
     s->proxSala = s;
     s->antSala = s;
+    s->qtdObstaculos = 0;
     return s;
 }
 
@@ -32,6 +33,9 @@ Sala *salas_criar(void) {
     galeria->antSala = jardim;
     galeria->proxSala = salao;
 
+    salao->obstaculos[0] = (Rectangle){500, 300, 200, 100};
+    salao->qtdObstaculos = 1;
+    
     return salao;
 }
 
