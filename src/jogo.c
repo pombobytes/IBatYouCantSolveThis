@@ -77,7 +77,25 @@ static void desenhar_menu(const Jogo *jogo) {
 }
 
 static void desenhar_explorando(const Jogo *jogo) {
-    DrawRectangle((int)jogo->posicaoJogador.x,(int)jogo->posicaoJogador.y, 32, 48, BLUE);    
+    DrawRectangle((int)jogo->posicaoJogador.x,(int)jogo->posicaoJogador.y, 32, 48, BLUE);
+    
+    float tempoPassado = TEMPO_TOTAL - jogo->tempoRestante;
+    int minutos = tempoPassado * 60 / TEMPO_TOTAL;
+
+    const char *relogio;
+    if (minutos < 60) {
+        relogio = TextFormat("23:%02d", minutos);
+    } else {
+        relogio = "00:00";
+    }
+
+int tamanhoRelogio = 30;
+int larguraRelogio = MeasureText(relogio, tamanhoRelogio);
+Color corRelogio = WHITE;
+if(minutos >= 50){
+    corRelogio = RED;
+}
+DrawText(relogio, GetScreenWidth() - larguraRelogio - 20, 20, tamanhoRelogio, corRelogio);
 }
 
 void jogo_desenhar(const Jogo *jogo) {
