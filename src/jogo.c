@@ -64,6 +64,7 @@ static void jogo_interagir(Jogo *jogo) {
         case OBJ_BILHETE:
             jogo->textoDialogo = "Uma bomba explodirá à meia-noite.";
             jogo->estado = DIALOGO;
+            //jogo_penalizar(jogo, 15); teste de penalização
             break;
         // acrescentem aqui o case do objeto de vcs
         default:
@@ -133,13 +134,7 @@ static void atualizar_explorando(Jogo *jogo)
         jogo_interagir(jogo);
     }
 
-    //tempo
-    jogo->tempoRestante -= dt;
-    if (jogo->tempoRestante <= 0)
-    {
-        jogo->estado = FINAL_RUIM;
-        jogo->tempoRestante = 0;
-    }
+
 }
 
 static void atualizar_dialogo(Jogo *jogo) {
@@ -148,8 +143,22 @@ static void atualizar_dialogo(Jogo *jogo) {
     }
 }
 
+//tempo
+static void atualizar_tempo(Jogo *jogo) {
+    float dt = GetFrameTime();
+    jogo->tempoRestante -= dt;
+    if (jogo->tempoRestante <= 0)
+    {
+        jogo->estado = FINAL_RUIM;
+        jogo->tempoRestante = 0;
+    }
+}
+
 void jogo_atualizar(Jogo *jogo)
 {
+    if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE || jogo->estado == INVENTARIO) {
+        atualizar_tempo(jogo);
+    }    
     switch (jogo->estado)
     {
     case MENU:
@@ -285,3 +294,7 @@ void jogo_finalizar(Jogo *jogo)
     jogo->salaAtual = NULL;
 }
 
+void jogo_penalizar(Jogo *jogo, int minutosJogo) {
+    float segundos = minutosJogo * TEMPO_TOTAL / 60.0f;
+    jogo->tempoRestante -= segundos;
+}

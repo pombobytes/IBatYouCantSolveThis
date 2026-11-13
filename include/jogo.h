@@ -35,5 +35,5 @@ void jogo_iniciar(Jogo *jogo);
 void jogo_atualizar(Jogo *jogo);
 void jogo_desenhar(const Jogo *jogo);
 void jogo_finalizar(Jogo *jogo);
-
+void jogo_penalizar(Jogo *jogo, int minutosJogo);
 #endif
