@@ -19,6 +19,7 @@ void jogo_iniciar(Jogo *jogo)
     jogo->salaAtual = jogo->salas;
     jogo->interativoProximo = -1;
     jogo->textoDialogo = NULL;
+    jogo->poraoAberto = false;
 }
 
 static void atualizar_menu(Jogo *jogo)
@@ -134,7 +135,10 @@ static void atualizar_explorando(Jogo *jogo)
         jogo_interagir(jogo);
     }
 
-
+    //teste para abrir o Porão
+    // if(IsKeyPressed(KEY_P)){
+    //     jogo_abrir_porao(jogo);
+    // }
 }
 
 static void atualizar_dialogo(Jogo *jogo) {
@@ -297,4 +301,15 @@ void jogo_finalizar(Jogo *jogo)
 void jogo_penalizar(Jogo *jogo, int minutosJogo) {
     float segundos = minutosJogo * TEMPO_TOTAL / 60.0f;
     jogo->tempoRestante -= segundos;
+}
+
+void jogo_abrir_porao(Jogo *jogo) {
+    if(jogo->poraoAberto == true){
+        return;
+    }
+    Sala *jardim = jogo->salas->proxSala;
+    Sala *porao  = sala_inserir_depois(jardim, "Porão", (Color){ 12, 15, 25, 255 });
+    if(porao != NULL){
+        jogo->poraoAberto = true;
+    }
 }

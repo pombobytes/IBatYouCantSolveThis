@@ -34,5 +34,5 @@ Sala *salas_criar(void);           // monta o anel com as 3 salas e devolve a pr
 void  salas_liberar(Sala *inicio); // libera todos os nós
 Sala *sala_ir_direita(Sala *atual);
 Sala *sala_ir_esquerda(Sala *atual);
-
+Sala *sala_inserir_depois(Sala *ref, const char *nome, Color cor);
 #endif

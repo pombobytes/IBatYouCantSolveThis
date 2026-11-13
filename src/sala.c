@@ -51,6 +51,18 @@ Sala *sala_ir_esquerda(Sala *atual) {
     return atual->antSala;
 }
 
+Sala *sala_inserir_depois(Sala *ref, const char *nome, Color cor) {
+    Sala *nova = sala_nova(nome, cor);
+    if (nova == NULL) return NULL;
+
+    nova->proxSala = ref->proxSala;
+    nova->antSala = ref;
+    ref->proxSala->antSala = nova;
+    ref->proxSala = nova;
+
+    return nova;
+}
+
 void salas_liberar(Sala *inicio) {
     if (inicio == NULL) return;
 

@@ -29,6 +29,7 @@ typedef struct {
     Sala *salaAtual;
     int interativoProximo;   // índice do objeto perto do Bruno na sala atual, ou -1
     const char *textoDialogo;   // texto mostrado no estado DIALOGO
+    bool poraoAberto;
 } Jogo;
 
 void jogo_iniciar(Jogo *jogo);
@@ -36,4 +37,5 @@ void jogo_atualizar(Jogo *jogo);
 void jogo_desenhar(const Jogo *jogo);
 void jogo_finalizar(Jogo *jogo);
 void jogo_penalizar(Jogo *jogo, int minutosJogo);
+void jogo_abrir_porao(Jogo *jogo);
 #endif
