@@ -2,8 +2,11 @@
 #define JOGADOR_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include "raylib.h"
 #include "sala.h"
+
+#define HORARIO(h, m) ((h) * 60 + (m))
 
 /* ---------- Inventário (lista encadeada simples ordenada por horário) ---------- */
 
@@ -36,5 +39,13 @@ void   inventario_iniciar(Inventario *inv);
 bool   inventario_inserir(Inventario *inv, const char *texto, int horario, const char *sala);
 Pista *inventario_buscar(const Inventario *inv, const char *texto);
 void   inventario_limpar(Inventario *inv);
+
+/* usados pela tela do inventário, acusação e fios */
+Pista *inventario_buscar_horario(const Inventario *inv, int horario);
+Pista *inventario_na_posicao(const Inventario *inv, int indice);
+bool   inventario_tem_horario(const Inventario *inv, int horario);
+void   inventario_alternar_marca(Inventario *inv, int indice);
+int    inventario_contar_marcadas(const Inventario *inv);
+void   inventario_desmarcar_todas(Inventario *inv);
 
 #endif
