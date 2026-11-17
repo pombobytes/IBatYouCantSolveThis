@@ -61,6 +61,7 @@ static void jogo_interagir(Jogo *jogo) {
 
     switch (obj->id) {
         case OBJ_BILHETE:
+            jogador_coletar_fala(&jogo->jogador, "Bilhete: \"Uma bomba explodira a meia-noite.\"", HORARIO(23, 0));
             jogo->textoDialogo = "Uma bomba explodirá à meia-noite.";
             jogo->estado = DIALOGO;
             //jogo_penalizar(jogo, 15); teste de penalização
@@ -132,6 +133,10 @@ static void atualizar_explorando(Jogo *jogo)
     if(jogo->interativoProximo != -1 && IsKeyPressed(KEY_E)){
         jogo_interagir(jogo);
     }
+    if(IsKeyPressed(KEY_I)) {
+        inventario_tela_abrir(&jogo->telaInventario, false);
+        jogo->estado = INVENTARIO;
+    }
 
     //teste para abrir o Porão
     // if(IsKeyPressed(KEY_P)){
@@ -156,6 +161,13 @@ static void atualizar_tempo(Jogo *jogo) {
     }
 }
 
+static void atualizar_inventario(Jogo *jogo) {
+    if(inventario_tela_atualizar(&jogo->telaInventario, &jogo->jogador.inventario) == true){
+        jogo->estado = EXPLORANDO;
+    }
+}
+
+
 void jogo_atualizar(Jogo *jogo)
 {
     if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE || jogo->estado == INVENTARIO) {
@@ -171,6 +183,9 @@ void jogo_atualizar(Jogo *jogo)
         break;
     case DIALOGO:
         atualizar_dialogo(jogo);
+        break;
+    case INVENTARIO:
+        atualizar_inventario(jogo);
         break;
     default:
         break;
@@ -271,6 +286,11 @@ static void desenhar_dialogo(const Jogo *jogo) {
 }
 
 
+static void desenhar_inventario(const Jogo *jogo) {
+    desenhar_explorando(jogo);
+    inventario_tela_desenhar(&jogo->telaInventario, &jogo->jogador.inventario);
+}
+
 void jogo_desenhar(const Jogo *jogo)
 {
     switch (jogo->estado)
@@ -283,6 +303,9 @@ void jogo_desenhar(const Jogo *jogo)
         break;
     case DIALOGO:
         desenhar_dialogo(jogo);
+        break;
+    case INVENTARIO:
+        desenhar_inventario(jogo);
         break;
     default:
         break;

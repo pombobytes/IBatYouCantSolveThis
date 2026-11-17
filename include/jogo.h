@@ -2,7 +2,7 @@
 #define JOGO_H
 
 #include "raylib.h" 
-#include "jogador.h"
+#include "inventario_tela.h"
 #define VELOCIDADE_JOGADOR 250.0f
 #define TEMPO_TOTAL 600.0f
 #define LARGURA_JOGADOR 32
@@ -29,6 +29,7 @@ typedef struct {
     int interativoProximo;   // índice do objeto perto do Bruno na sala atual, ou -1
     const char *textoDialogo;   // texto mostrado no estado DIALOGO
     bool poraoAberto;
+    TelaInventario telaInventario;
 } Jogo;
 
 void jogo_iniciar(Jogo *jogo);
