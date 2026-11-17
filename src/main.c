@@ -3,6 +3,7 @@
 
 int main(void) {
     InitWindow(1280, 720, "I Bat You Can't Solve It");
+    SetExitKey(KEY_INSERT);
     SetWindowPosition(100, 100);
     ToggleBorderlessWindowed();
     SetTargetFPS(60);

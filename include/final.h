@@ -7,17 +7,15 @@
 #include "inventario_tela.h"
 
 typedef enum { SUSPEITO_HELENA, SUSPEITO_OTAVIO, SUSPEITO_ALMEIDA, TOTAL_SUSPEITOS } Suspeito;
-typedef enum { RESULTADO_NENHUM, RESULTADO_MUITO_BOM, RESULTADO_BOM,
-               RESULTADO_MEDIO, RESULTADO_RUIM } ResultadoFinal;
+typedef enum { RESULTADO_NENHUM, RESULTADO_MUITO_BOM, RESULTADO_BOM,RESULTADO_MEDIO, RESULTADO_RUIM } ResultadoFinal;
 
-/* ---------- Configuração do mistério (mude aqui se o grupo decidir outra coisa) ----------
-   As pistas são identificadas pelo HORÁRIO, que é único na linha do tempo.          */
+// Configuração do mistério (mude aqui se o grupo decidir outra coisa) As pistas são identificadas pelo HORÁRIO, que é único na linha do tempo.         
 #define CULPADO      SUSPEITO_OTAVIO
 #define NUM_PROVAS   3
 #define NUM_FIOS     4
 #define ERROS_MAX    2
-extern const int PROVAS[NUM_PROVAS];       /* horários das pistas que provam a culpa */
-extern const int ORDEM_FIOS[NUM_FIOS];     /* horários na ordem de corte             */
+extern const int PROVAS[NUM_PROVAS];       // horários das pistas que provam a culpa 
+extern const int ORDEM_FIOS[NUM_FIOS];     // horários na ordem de corte 
 
 /* ---------- Acusação ---------- */
 typedef enum { ACUS_ESCOLHER_SUSPEITO, ACUS_MARCAR_PISTAS, ACUS_CONCLUIDA } EtapaAcusacao;

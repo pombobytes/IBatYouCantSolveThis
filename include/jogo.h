@@ -2,7 +2,7 @@
 #define JOGO_H
 
 #include "raylib.h" 
-#include "sala.h"
+#include "jogador.h"
 #define VELOCIDADE_JOGADOR 250.0f
 #define TEMPO_TOTAL 600.0f
 #define LARGURA_JOGADOR 32
@@ -24,9 +24,8 @@ typedef enum {
 typedef struct {
     EstadoJogo estado;
     float tempoRestante;
-    Vector2 posicaoJogador;
+    Jogador jogador;   // posição, sala atual e inventário do Bruno
     Sala *salas;
-    Sala *salaAtual;
     int interativoProximo;   // índice do objeto perto do Bruno na sala atual, ou -1
     const char *textoDialogo;   // texto mostrado no estado DIALOGO
     bool poraoAberto;

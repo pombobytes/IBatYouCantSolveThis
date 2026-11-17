@@ -13,10 +13,8 @@ void jogo_iniciar(Jogo *jogo)
 {
     jogo->estado = MENU;
     jogo->tempoRestante = TEMPO_TOTAL;
-    jogo->posicaoJogador.x = GetScreenWidth() / 2.0f;
-    jogo->posicaoJogador.y = GetScreenHeight() / 2.0f;
     jogo->salas = salas_criar();
-    jogo->salaAtual = jogo->salas;
+    jogador_iniciar(&jogo->jogador, jogo->salas,(Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f });
     jogo->interativoProximo = -1;
     jogo->textoDialogo = NULL;
     jogo->poraoAberto = false;
@@ -32,9 +30,9 @@ static void atualizar_menu(Jogo *jogo)
 
 //colisao
 static bool colide_com_sala(const Jogo *jogo) {
-    Rectangle bruno = {jogo->posicaoJogador.x,jogo->posicaoJogador.y,LARGURA_JOGADOR, ALTURA_JOGADOR};
-    for (int i = 0; i < jogo->salaAtual->qtdObstaculos; i++) {
-        if (CheckCollisionRecs(bruno, jogo->salaAtual->obstaculos[i])) {
+    Rectangle bruno = {jogo->jogador.posicao.x,jogo->jogador.posicao.y,LARGURA_JOGADOR, ALTURA_JOGADOR};
+    for (int i = 0; i < jogo->jogador.salaAtual->qtdObstaculos; i++) {
+        if (CheckCollisionRecs(bruno, jogo->jogador.salaAtual->obstaculos[i])) {
             return true;
         }
     }
@@ -44,14 +42,14 @@ static bool colide_com_sala(const Jogo *jogo) {
 static int buscar_interativo_proximo(const Jogo *jogo) {
     // retângulo do Bruno "inflado" em DISTANCIA_INTERACAO para cada lado
     Rectangle alcance = {
-        jogo->posicaoJogador.x - DISTANCIA_INTERACAO,
-        jogo->posicaoJogador.y - DISTANCIA_INTERACAO,
+        jogo->jogador.posicao.x - DISTANCIA_INTERACAO,
+        jogo->jogador.posicao.y - DISTANCIA_INTERACAO,
         LARGURA_JOGADOR + 2 * DISTANCIA_INTERACAO,
         ALTURA_JOGADOR + 2 * DISTANCIA_INTERACAO
     };
 
-    for (int i = 0; i < jogo->salaAtual->qntdInterativo; i++) {
-        if (CheckCollisionRecs(alcance, jogo->salaAtual->interativos[i].area)) {
+    for (int i = 0; i < jogo->jogador.salaAtual->qntdInterativo; i++) {
+        if (CheckCollisionRecs(alcance, jogo->jogador.salaAtual->interativos[i].area)) {
             return i;
         }
     }
@@ -59,7 +57,7 @@ static int buscar_interativo_proximo(const Jogo *jogo) {
 }
 
 static void jogo_interagir(Jogo *jogo) {
-    const Interativo *obj = &jogo->salaAtual->interativos[jogo->interativoProximo];
+    const Interativo *obj = &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
 
     switch (obj->id) {
         case OBJ_BILHETE:
@@ -79,54 +77,54 @@ static void atualizar_explorando(Jogo *jogo)
     float passo = VELOCIDADE_JOGADOR * dt;
 
     //movimentação
-    float yAntigo = jogo->posicaoJogador.y;
+    float yAntigo = jogo->jogador.posicao.y;
     if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))
     {
-        jogo->posicaoJogador.y -= passo;
+        jogo->jogador.posicao.y -= passo;
     }
     if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))
     {
-        jogo->posicaoJogador.y += passo;
+        jogo->jogador.posicao.y += passo;
     }
     if(colide_com_sala(jogo)){
-        jogo->posicaoJogador.y = yAntigo;
+        jogo->jogador.posicao.y = yAntigo;
     }
 
-    float xAntigo = jogo->posicaoJogador.x;
+    float xAntigo = jogo->jogador.posicao.x;
     if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT))
     {
-        jogo->posicaoJogador.x += passo;
+        jogo->jogador.posicao.x += passo;
     }
     if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))
     {
-        jogo->posicaoJogador.x -= passo;
+        jogo->jogador.posicao.x -= passo;
     }
     if(colide_com_sala(jogo)){
-        jogo->posicaoJogador.x = xAntigo;
+        jogo->jogador.posicao.x = xAntigo;
     }
 
     //troca de sala
     int larguraTela = GetScreenWidth();
-    if (jogo->posicaoJogador.x + LARGURA_JOGADOR > larguraTela)
+    if (jogo->jogador.posicao.x + LARGURA_JOGADOR > larguraTela)
     {
-        jogo->salaAtual = sala_ir_direita(jogo->salaAtual);
-        jogo->posicaoJogador.x = 0;
+        jogo->jogador.salaAtual = sala_ir_direita(jogo->jogador.salaAtual);
+        jogo->jogador.posicao.x = 0;
     }
-    if (jogo->posicaoJogador.x < 0)
+    if (jogo->jogador.posicao.x < 0)
     {
-        jogo->salaAtual = sala_ir_esquerda(jogo->salaAtual);
-        jogo->posicaoJogador.x = larguraTela - LARGURA_JOGADOR;
+        jogo->jogador.salaAtual = sala_ir_esquerda(jogo->jogador.salaAtual);
+        jogo->jogador.posicao.x = larguraTela - LARGURA_JOGADOR;
     }
 
     int alturaTela = GetScreenHeight();
     //borda de cima
-    if(jogo->posicaoJogador.y < 0){
-        jogo->posicaoJogador.y = 0;
+    if(jogo->jogador.posicao.y < 0){
+        jogo->jogador.posicao.y = 0;
     }
 
     //borda de baixo
-    if((jogo->posicaoJogador.y + ALTURA_JOGADOR) > alturaTela){
-        jogo->posicaoJogador.y = alturaTela - ALTURA_JOGADOR;
+    if((jogo->jogador.posicao.y + ALTURA_JOGADOR) > alturaTela){
+        jogo->jogador.posicao.y = alturaTela - ALTURA_JOGADOR;
     }
 
     //interação
@@ -205,31 +203,31 @@ static void desenhar_explorando(const Jogo *jogo)
     int alturaTela = GetScreenHeight();
 
     // fundo com a cor da sala atual
-    DrawRectangle(0, 0, larguraTela, alturaTela, jogo->salaAtual->corFundo);
+    DrawRectangle(0, 0, larguraTela, alturaTela, jogo->jogador.salaAtual->corFundo);
 
     // nome da sala no canto superior esquerdo
-    DrawText(jogo->salaAtual->nome, 20, 20, 30, WHITE);
+    DrawText(jogo->jogador.salaAtual->nome, 20, 20, 30, WHITE);
     
     //obstaculo desenho
-    for (int i = 0; i < jogo->salaAtual->qtdObstaculos; i++) {
-        DrawRectangleRec(jogo->salaAtual->obstaculos[i], DARKGRAY);
+    for (int i = 0; i < jogo->jogador.salaAtual->qtdObstaculos; i++) {
+        DrawRectangleRec(jogo->jogador.salaAtual->obstaculos[i], DARKGRAY);
     }
     
     //interativo desenho
-    for(int i = 0; i < jogo->salaAtual->qntdInterativo; i++){
-        DrawRectangleRec(jogo->salaAtual->interativos[i].area, YELLOW);
+    for(int i = 0; i < jogo->jogador.salaAtual->qntdInterativo; i++){
+        DrawRectangleRec(jogo->jogador.salaAtual->interativos[i].area, YELLOW);
     }
 
     
     
     // jogador (BRUNO)
-    DrawRectangle((int)jogo->posicaoJogador.x, (int)jogo->posicaoJogador.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
+    DrawRectangle((int)jogo->jogador.posicao.x, (int)jogo->jogador.posicao.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
     
     //interativo aviso
     if (jogo->interativoProximo != -1 && jogo->estado == EXPLORANDO) {
-        const Interativo *obj =  &jogo->salaAtual->interativos[jogo->interativoProximo];
+        const Interativo *obj =  &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
         const char *aviso = TextFormat("[E] %s", obj->rotulo);
-        DrawText(aviso, (int)jogo->posicaoJogador.x, ((int)jogo->posicaoJogador.y - 25),  20, GOLD);
+        DrawText(aviso, (int)jogo->jogador.posicao.x, ((int)jogo->jogador.posicao.y - 25),  20, GOLD);
     }
     
     float tempoPassado = TEMPO_TOTAL - jogo->tempoRestante;
@@ -293,9 +291,10 @@ void jogo_desenhar(const Jogo *jogo)
 
 void jogo_finalizar(Jogo *jogo)
 {
+    jogador_finalizar(&jogo->jogador);
     salas_liberar(jogo->salas);
     jogo->salas = NULL;
-    jogo->salaAtual = NULL;
+    jogo->jogador.salaAtual = NULL;
 }
 
 void jogo_penalizar(Jogo *jogo, int minutosJogo) {
