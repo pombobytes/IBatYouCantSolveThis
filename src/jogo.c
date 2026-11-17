@@ -17,6 +17,7 @@ static Texture2D fundoMenu;
 static bool fundoMenuOk = false;   // se a imagem não carregar, o menu usa só texto
 static Texture2D spriteMordomo;    // 64x32: 2 quadros de 32x32 (parado, respirando)
 static Texture2D spriteOtavio;     // empresario.png
+static Texture2D spriteGarcom;     // garcom.png (mesmo formato do mordomo)
 static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para ajustar o mapa)
 
 static Texture2D carregar_pixel_art(const char *caminho) {
@@ -31,6 +32,7 @@ void jogo_carregar_recursos(void) {
     if (fundoMenuOk) SetTextureFilter(fundoMenu, TEXTURE_FILTER_BILINEAR);
     spriteMordomo = carregar_pixel_art("assets/mordomo.png");
     spriteOtavio  = carregar_pixel_art("assets/empresario.png");
+    spriteGarcom  = carregar_pixel_art("assets/garcom.png");
     jogador_anim_iniciar((Vector2){ 0, 0 });
 }
 
@@ -39,6 +41,7 @@ void jogo_liberar_recursos(void) {
     fundoMenuOk = false;
     if (spriteMordomo.id != 0) UnloadTexture(spriteMordomo);
     if (spriteOtavio.id != 0)  UnloadTexture(spriteOtavio);
+    if (spriteGarcom.id != 0)  UnloadTexture(spriteGarcom);
     jogador_anim_finalizar();
 }
 
@@ -714,20 +717,30 @@ static void desenhar_npc(Texture2D folha, Rectangle pes) {
 // Personagens que aparecem em cada sala (os pés coincidem com obstáculos de sala.c / jogo_abrir_porao)
 #define PES_MORDOMO ((Rectangle){ 704, 262, 32, 20 })
 #define PES_OTAVIO  ((Rectangle){ 900, 360, 32, 24 })
+#define PES_GARCOM1 ((Rectangle){ 178, 500, 32, 24 })
+#define PES_GARCOM2 ((Rectangle){ 238, 515, 32, 24 })
 
 static void desenhar_personagens(const Jogo *jogo) {
     const Sala *sala = jogo->jogador.salaAtual;
-    Texture2D folha = { 0 };
-    Rectangle pes = { 0 };
-    if (sala == jogo->salas)                 { folha = spriteMordomo; pes = PES_MORDOMO; }
-    else if (jogo->poraoAberto && sala->fundo.id == 0) { folha = spriteOtavio; pes = PES_OTAVIO; }
+    Texture2D folhas[2];
+    Rectangle pes[2];
+    int qtd = 0;
+    if (sala == jogo->salas) {                                   // salão
+        folhas[qtd] = spriteMordomo; pes[qtd++] = PES_MORDOMO;
+    } else if (sala == jogo->salas->proxSala) {                  // jardim: garçons atrás do balcão
+        folhas[qtd] = spriteGarcom; pes[qtd++] = PES_GARCOM1;
+        folhas[qtd] = spriteGarcom; pes[qtd++] = PES_GARCOM2;
+    } else if (jogo->poraoAberto && sala->fundo.id == 0) {       // porão
+        folhas[qtd] = spriteOtavio; pes[qtd++] = PES_OTAVIO;
+    }
 
     // quem está mais "para baixo" na tela é desenhado por cima (profundidade)
     float pesBruno = jogo->jogador.posicao.y + ALTURA_JOGADOR;
-    bool temNpc = pes.width > 0;
-    if (temNpc && pes.y + pes.height <= pesBruno) desenhar_npc(folha, pes);
+    for (int i = 0; i < qtd; i++)
+        if (pes[i].y + pes[i].height <= pesBruno) desenhar_npc(folhas[i], pes[i]);
     jogador_anim_desenhar(jogo->jogador.posicao, LARGURA_JOGADOR, ALTURA_JOGADOR);
-    if (temNpc && pes.y + pes.height > pesBruno)  desenhar_npc(folha, pes);
+    for (int i = 0; i < qtd; i++)
+        if (pes[i].y + pes[i].height > pesBruno) desenhar_npc(folhas[i], pes[i]);
 }
 
 static void desenhar_explorando(const Jogo *jogo)
