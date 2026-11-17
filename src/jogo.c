@@ -11,6 +11,31 @@ static const char *controles = "WASD/Setas: andar   E: interagir   I: linha do t
 static const int tamanhoFonte = 40;
 static const int tamanhoFonteSub = 20;
 
+/* ---------------- recursos (imagens) ---------------- */
+static Texture2D fundoMenu;
+static bool fundoMenuOk = false;   // se a imagem não carregar, o menu usa só texto
+
+void jogo_carregar_recursos(void) {
+    fundoMenu = LoadTexture("assets/menu.png");
+    fundoMenuOk = (fundoMenu.id != 0);
+    if (fundoMenuOk) SetTextureFilter(fundoMenu, TEXTURE_FILTER_BILINEAR);
+}
+
+void jogo_liberar_recursos(void) {
+    if (fundoMenuOk) UnloadTexture(fundoMenu);
+    fundoMenuOk = false;
+}
+
+/* Botões do menu, por cima dos botões desenhados em assets/menu.png
+   (coordenadas na resolução fixa 1280x720) */
+#define QTD_OPCOES_MENU 3
+static const Rectangle BOTOES_MENU[QTD_OPCOES_MENU] = {
+    { 479, 370, 331, 68 },   // COMEÇAR
+    { 488, 454, 314, 61 },   // CONTROLES
+    { 488, 532, 314, 60 },   // CRÉDITOS
+};
+static const char *ROTULOS_MENU[QTD_OPCOES_MENU] = { "COMEÇAR", "CONTROLES", "CRÉDITOS" };
+
 // Posição inicial do Bruno no salão (longe da mesa e das portas) 
 #define SPAWN_X 624.0f
 #define SPAWN_Y 470.0f
@@ -19,6 +44,8 @@ static const int tamanhoFonteSub = 20;
 void jogo_iniciar(Jogo *jogo)
 {
     jogo->estado = MENU;
+    jogo->telaMenu = TELA_MENU_PRINCIPAL;
+    jogo->opcaoMenu = 0;
     jogo->tempoRestante = TEMPO_TOTAL;
     jogo->salas = salas_criar();
     jogador_iniciar(&jogo->jogador, jogo->salas, (Vector2){ SPAWN_X, SPAWN_Y });
@@ -70,11 +97,49 @@ static void penalizar(Jogo *jogo, int minutos, const char *motivo) {
     aviso_mostrar(TextFormat("-%d min: %s", minutos, motivo), 3.0f);
 }
 
+static void menu_escolher(Jogo *jogo, int opcao)
+{
+    switch (opcao) {
+        case 0: jogo->estado = EXPLORANDO; break;                 // COMEÇAR
+        case 1: jogo->telaMenu = TELA_MENU_CONTROLES; break;      // CONTROLES
+        case 2: jogo->telaMenu = TELA_MENU_CREDITOS; break;       // CRÉDITOS
+        default: break;
+    }
+}
+
 static void atualizar_menu(Jogo *jogo)
 {
-    if (IsKeyPressed(KEY_ENTER))
-    {
-        jogo->estado = EXPLORANDO;
+    // telas de controles e créditos: qualquer uma destas teclas (ou clique) volta
+    if (jogo->telaMenu != TELA_MENU_PRINCIPAL) {
+        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_E) ||
+            IsKeyPressed(KEY_BACKSPACE) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            jogo->telaMenu = TELA_MENU_PRINCIPAL;
+        }
+        return;
+    }
+
+    // teclado: W/S ou setas trocam o botão (dá a volta), ENTER/E escolhe
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
+        jogo->opcaoMenu = (jogo->opcaoMenu + 1) % QTD_OPCOES_MENU;
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
+        jogo->opcaoMenu = (jogo->opcaoMenu - 1 + QTD_OPCOES_MENU) % QTD_OPCOES_MENU;
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_E)) {
+        menu_escolher(jogo, jogo->opcaoMenu);
+        return;
+    }
+
+    // mouse: passar por cima seleciona, clicar escolhe
+    // (main.c ajusta o mouse para a resolução fixa com SetMouseOffset/SetMouseScale)
+    Vector2 mouse = GetMousePosition();
+    Vector2 delta = GetMouseDelta();
+    for (int i = 0; i < QTD_OPCOES_MENU; i++) {
+        if (CheckCollisionPointRec(mouse, BOTOES_MENU[i])) {
+            if (delta.x != 0 || delta.y != 0) jogo->opcaoMenu = i;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                jogo->opcaoMenu = i;
+                menu_escolher(jogo, i);
+            }
+        }
     }
 }
 
@@ -480,9 +545,84 @@ void jogo_atualizar(Jogo *jogo)
     }
 }
 
+/* Painel escuro centralizado usado pelas telas de controles e créditos */
+static Rectangle desenhar_painel_menu(const char *tituloPainel)
+{
+    Rectangle painel = { 290, 120, 700, 480 };
+    DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, Fade(BLACK, 0.6f));
+    DrawRectangleRec(painel, (Color){ 14, 13, 18, 240 });
+    DrawRectangleLinesEx(painel, 3, (Color){ 200, 196, 188, 255 });
+    int lt = MeasureText(tituloPainel, 34);
+    DrawText(tituloPainel, (int)(painel.x + (painel.width - lt) / 2), (int)painel.y + 30, 34, (Color){ 230, 226, 218, 255 });
+    const char *voltar = "ESC ou ENTER: voltar";
+    DrawText(voltar, (int)(painel.x + (painel.width - MeasureText(voltar, 18)) / 2),
+             (int)(painel.y + painel.height) - 40, 18, GRAY);
+    return painel;
+}
+
+static void desenhar_menu_controles(void)
+{
+    Rectangle p = desenhar_painel_menu("CONTROLES");
+    static const char *teclas[][2] = {
+        { "WASD / Setas", "andar" },
+        { "E",            "interagir, avançar diálogos" },
+        { "I",            "linha do tempo (pistas)" },
+        { "ESPAÇO",       "marcar pista na acusação" },
+        { "ENTER",        "confirmar" },
+        { "ESC",          "fechar telas" },
+        { "F11",          "tela cheia" },
+    };
+    int y = (int)p.y + 110;
+    for (int i = 0; i < QTD(teclas); i++, y += 42) {
+        DrawText(teclas[i][0], (int)p.x + 90, y, 24, GOLD);
+        DrawText(teclas[i][1], (int)p.x + 330, y, 24, RAYWHITE);
+    }
+}
+
+static void desenhar_menu_creditos(void)
+{
+    Rectangle p = desenhar_painel_menu("CRÉDITOS");
+    static const char *linhas[] = {
+        "Matheus Costa da Rocha",
+        "Luis Filipe Alves Silva Santos",
+        "Amanda Campos Lima",
+        "Leticia Camello Barros",
+        "",
+        "Algoritmos e Estruturas de Dados - CESAR School",
+        "Feito em C com raylib",
+    };
+    int y = (int)p.y + 110;
+    for (int i = 0; i < QTD(linhas); i++, y += 40) {
+        int tam = (i < 4) ? 26 : 20;
+        Color cor = (i < 4) ? RAYWHITE : LIGHTGRAY;
+        DrawText(linhas[i], (int)(p.x + (p.width - MeasureText(linhas[i], tam)) / 2), y, tam, cor);
+    }
+}
+
 static void desenhar_menu(const Jogo *jogo)
 {
-    (void)jogo;
+    if (fundoMenuOk) {
+        // imagem de fundo esticada para a resolução fixa
+        DrawTexturePro(fundoMenu,
+                       (Rectangle){ 0, 0, (float)fundoMenu.width, (float)fundoMenu.height },
+                       (Rectangle){ 0, 0, TELA_LARGURA, TELA_ALTURA },
+                       (Vector2){ 0, 0 }, 0.0f, WHITE);
+
+        if (jogo->telaMenu == TELA_MENU_CONTROLES) { desenhar_menu_controles(); return; }
+        if (jogo->telaMenu == TELA_MENU_CREDITOS)  { desenhar_menu_creditos();  return; }
+
+        // brilho no botão selecionado (os botões já estão desenhados na imagem)
+        Rectangle b = BOTOES_MENU[jogo->opcaoMenu];
+        DrawRectangleRec(b, Fade(WHITE, 0.10f));
+        DrawRectangleRoundedLinesEx((Rectangle){ b.x - 4, b.y - 4, b.width + 8, b.height + 8 },
+                                    0.15f, 6, 3.0f, (Color){ 245, 240, 230, 255 });
+        DrawText(controles, (TELA_LARGURA - MeasureText(controles, 16)) / 2, TELA_ALTURA - 30, 16, Fade(LIGHTGRAY, 0.8f));
+        return;
+    }
+
+    /* ---- sem a imagem (arquivo não encontrado): menu só com texto ---- */
+    if (jogo->telaMenu == TELA_MENU_CONTROLES) { desenhar_menu_controles(); return; }
+    if (jogo->telaMenu == TELA_MENU_CREDITOS)  { desenhar_menu_creditos();  return; }
     int larguraTela = TELA_LARGURA;
     int alturaTela = TELA_ALTURA;
     int larguraTexto = MeasureText(titulo, tamanhoFonte);
@@ -498,6 +638,13 @@ static void desenhar_menu(const Jogo *jogo)
     int ySub = y + 60;
 
     DrawText(subtitulo, xSub, ySub, tamanhoFonteSub, GRAY);
+
+    // botões em texto, com o selecionado destacado
+    for (int i = 0; i < QTD_OPCOES_MENU; i++) {
+        const char *r = ROTULOS_MENU[i];
+        Color cor = (i == jogo->opcaoMenu) ? GOLD : GRAY;
+        DrawText(r, (larguraTela - MeasureText(r, 24)) / 2, ySub + 50 + i * 40, 24, cor);
+    }
 
     int larguraControles = MeasureText(controles, 18);
     DrawText(controles, (larguraTela - larguraControles) / 2, alturaTela - 60, 18, DARKGRAY);

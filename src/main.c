@@ -13,6 +13,8 @@ int main(void) {
     RenderTexture2D alvo = LoadRenderTexture(TELA_LARGURA, TELA_ALTURA);
     SetTextureFilter(alvo.texture, TEXTURE_FILTER_POINT);   // pixel art nítida
 
+    jogo_carregar_recursos();   // imagens (menu etc.): precisa vir depois do InitWindow
+
     Jogo jogo;
     jogo_iniciar(&jogo);
 
@@ -20,15 +22,8 @@ int main(void) {
         if(IsKeyPressed(KEY_F11)){
             ToggleBorderlessWindowed();
         }
-        jogo_atualizar(&jogo);
 
-        // 1) desenha o jogo na resolução fixa
-        BeginTextureMode(alvo);
-            ClearBackground(BLACK);
-            jogo_desenhar(&jogo);
-        EndTextureMode();
-
-        // 2) amplia para a janela mantendo a proporção (barras pretas se sobrar espaço)
+        // Escala da resolução fixa para a janela, mantendo a proporção (barras pretas se sobrar espaço)
         float escalaX = (float)GetScreenWidth()  / TELA_LARGURA;
         float escalaY = (float)GetScreenHeight() / TELA_ALTURA;
         float escala  = (escalaX < escalaY) ? escalaX : escalaY;
@@ -40,6 +35,20 @@ int main(void) {
             TELA_ALTURA  * escala
         };
 
+        // O mouse passa a responder em coordenadas da resolução fixa (1280x720),
+        // então os botões do menu funcionam em qualquer tamanho de janela
+        SetMouseOffset((int)-destino.x, (int)-destino.y);
+        SetMouseScale(1.0f / escala, 1.0f / escala);
+
+        jogo_atualizar(&jogo);
+
+        // 1) desenha o jogo na resolução fixa
+        BeginTextureMode(alvo);
+            ClearBackground(BLACK);
+            jogo_desenhar(&jogo);
+        EndTextureMode();
+
+        // 2) amplia para a janela
         BeginDrawing();
             ClearBackground(BLACK);
             DrawTexturePro(alvo.texture, origem, destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
@@ -47,6 +56,7 @@ int main(void) {
     }
 
     jogo_finalizar(&jogo);
+    jogo_liberar_recursos();
     UnloadRenderTexture(alvo);
     CloseWindow();
     return 0;

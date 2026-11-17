@@ -22,8 +22,13 @@ typedef enum {
     FIM            // tela de final; qual final está em jogo->resultado
 } EstadoJogo;
 
+/* Telas dentro do estado MENU */
+typedef enum { TELA_MENU_PRINCIPAL, TELA_MENU_CONTROLES, TELA_MENU_CREDITOS } TelaMenu;
+
 typedef struct {
     EstadoJogo estado;
+    TelaMenu telaMenu;       // principal, controles ou créditos
+    int opcaoMenu;           // botão selecionado: 0 começar, 1 controles, 2 créditos
     float tempoRestante;
     Jogador jogador;   // posição, sala atual e inventário do Bruno
     Sala *salas;
@@ -55,6 +60,10 @@ typedef struct {
     bool capturouNoPorao;     // final muito bom (furtividade no porão)
     ResultadoFinal resultado; // qual final mostrar no estado FIM
 } Jogo;
+
+/* Imagens do jogo: carregar uma vez depois do InitWindow e liberar antes do CloseWindow */
+void jogo_carregar_recursos(void);
+void jogo_liberar_recursos(void);
 
 void jogo_iniciar(Jogo *jogo);
 void jogo_atualizar(Jogo *jogo);
