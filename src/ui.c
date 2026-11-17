@@ -104,8 +104,7 @@ void escolha_desenhar(const Escolha *e) {
         int y = caixa.y + 60 + i * 36;
         bool sel = (i == e->selecionada);
         if (sel) DrawRectangle(caixa.x + 10, y - 6, caixa.width - 20, 30, Fade(GOLD, 0.25f));
-        DrawText(TextFormat("%s %s", sel ? ">" : " ", e->opcoes[i]), caixa.x + 20, y, 20,
-                 sel ? WHITE : LIGHTGRAY);
+        DrawText(TextFormat("%s %s", sel ? ">" : " ", e->opcoes[i]), caixa.x + 20, y, 20, sel ? WHITE : LIGHTGRAY);
     }
 }
 

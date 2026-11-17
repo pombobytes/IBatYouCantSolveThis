@@ -12,7 +12,7 @@ static const char *controles = "WASD/Setas: andar   E: interagir   I: linha do t
 static const int tamanhoFonte = 40;
 static const int tamanhoFonteSub = 20;
 
-/* ---------------- recursos (imagens) ---------------- */
+//recursos (imagens)
 static Texture2D fundoMenu;
 static bool fundoMenuOk = false;   // se a imagem não carregar, o menu usa só texto
 static Texture2D spriteMordomo;    // 64x32: 2 quadros de 32x32 (parado, respirando)
@@ -187,7 +187,7 @@ static int buscar_interativo_proximo(const Jogo *jogo) {
     return -1;
 }
 
-/* ---------------- Salão: a charada do bilhete ----------------
+/*Salão: a charada do bilhete 
    No verso do bilhete: "Tenho cúpula, mas não sou igreja. Guardo o jantar,
    mas não sou geladeira." -> a campânula de prata do bufê.
    Objeto errado custa 2 min. */

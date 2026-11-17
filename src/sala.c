@@ -56,7 +56,7 @@ static void sala_usar_imagem(Sala *s, const char *caminho) {
     s->qtdObstaculos = 0;
 }
 
-/* ---------- Salão de Festas (assets/Salao.png) ----------
+/*Salão de Festas
    Portas nas laterais (degraus de madeira). Bilhete com o mordomo,
    charada da campânula no bufê e o relógio de pêndulo da bomba. */
 static void montar_salao(Sala *s) {
@@ -74,10 +74,10 @@ static void montar_salao(Sala *s) {
     // móveis
     Rectangle relogio = { 608, 150, 64, 62 };     // base do relógio de pêndulo
     Rectangle bufe    = { 770, 165, 210, 72 };
-    Rectangle mesaSE  = { 135, 175, 165, 100 };   // mesas redondas com cadeiras
-    Rectangle mesaSD  = { 1018, 180, 165, 105 };
-    Rectangle mesaIE  = { 163, 505, 165, 110 };
-    Rectangle mesaID  = { 963, 505, 165, 110 };
+    Rectangle mesaSE  = { 150, 215, 135, 55 };   // mesas redondas: só a base (pés e cadeiras de baixo)
+    Rectangle mesaSD  = { 1033, 220, 135, 60 };
+    Rectangle mesaIE  = { 178, 545, 135, 65 };
+    Rectangle mesaID  = { 978, 545, 135, 65 };
     Rectangle vasoIE  = { 66, 565, 50, 75 };
     Rectangle vasoID  = { 1165, 565, 50, 75 };
     Rectangle mordomo = { 704, 262, 32, 20 };     // pés do mordomo (sprite desenhado em jogo.c)
@@ -99,7 +99,7 @@ static void montar_salao(Sala *s) {
     sala_adicionar_interativo(s, OBJ_VASO,      vasoIE,                           "Examinar o vaso");
 }
 
-/* ---------- Jardim de Inverno (assets/jardim.png) ----------
+/* Jardim de Inverno (assets/jardim.png)
    Porta dupla em cima (vai para a próxima sala) e saída embaixo (volta). */
 static void montar_jardim(Sala *s) {
     sala_usar_imagem(s, "assets/jardim.png");
@@ -114,9 +114,9 @@ static void montar_jardim(Sala *s) {
     sala_adicionar_obstaculo(s, fonte);
     sala_adicionar_obstaculo(s, (Rectangle){ 458, 345, 47, 160 });    // flores ao lado da fonte
     sala_adicionar_obstaculo(s, (Rectangle){ 800, 345, 47, 160 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 245, 215, 175, 105 });   // mesas
-    sala_adicionar_obstaculo(s, (Rectangle){ 865, 215, 160, 110 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 935, 515, 150, 115 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 262, 255, 140, 60 });   // mesas: só a base
+    sala_adicionar_obstaculo(s, (Rectangle){ 880, 255, 130, 65 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 950, 555, 120, 70 });
     sala_adicionar_obstaculo(s, (Rectangle){ 60, 390, 230, 72 });     // balcão do bar (em L)
     sala_adicionar_obstaculo(s, (Rectangle){ 60, 462, 100, 90 });
     sala_adicionar_obstaculo(s, (Rectangle){ 60, 550, 318, 90 });
@@ -135,7 +135,7 @@ static void montar_jardim(Sala *s) {
     sala_adicionar_interativo(s, OBJ_FONTE,   fonte,                              "Examinar a fonte");
 }
 
-/* ---------- Galeria de Arte (assets/galeria.png) ----------
+/* Galeria de Arte 
    Porta dupla em cima (próxima sala) e tapete de saída embaixo (volta). */
 static void montar_galeria(Sala *s) {
     sala_usar_imagem(s, "assets/galeria.png");
@@ -165,7 +165,7 @@ static void montar_galeria(Sala *s) {
     sala_adicionar_obstaculo(s, (Rectangle){ 1225, 610, 43, 30 });
 
     sala_adicionar_interativo(s, OBJ_QUADROS, divisoriaE, "Examinar os quadros do leilão");
-    sala_adicionar_interativo(s, OBJ_QUADROS, divisoriaD, "Examinar os quadros do leilão");
+
 }
 
 Sala *salas_criar(void) {
