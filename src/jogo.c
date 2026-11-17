@@ -18,6 +18,7 @@ static bool fundoMenuOk = false;   // se a imagem não carregar, o menu usa só 
 static Texture2D spriteMordomo;    // 64x32: 2 quadros de 32x32 (parado, respirando)
 static Texture2D spriteOtavio;     // empresario.png
 static Texture2D spriteGarcom;     // garcom.png (mesmo formato do mordomo)
+static Texture2D spriteGarcom2;    // garcom2.png (outro garçom, cores diferentes)
 static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para ajustar o mapa)
 
 static Texture2D carregar_pixel_art(const char *caminho) {
@@ -33,6 +34,7 @@ void jogo_carregar_recursos(void) {
     spriteMordomo = carregar_pixel_art("assets/mordomo.png");
     spriteOtavio  = carregar_pixel_art("assets/empresario.png");
     spriteGarcom  = carregar_pixel_art("assets/garcom.png");
+    spriteGarcom2 = carregar_pixel_art("assets/garcom2.png");
     jogador_anim_iniciar((Vector2){ 0, 0 });
 }
 
@@ -42,6 +44,7 @@ void jogo_liberar_recursos(void) {
     if (spriteMordomo.id != 0) UnloadTexture(spriteMordomo);
     if (spriteOtavio.id != 0)  UnloadTexture(spriteOtavio);
     if (spriteGarcom.id != 0)  UnloadTexture(spriteGarcom);
+    if (spriteGarcom2.id != 0) UnloadTexture(spriteGarcom2);
     jogador_anim_finalizar();
 }
 
@@ -729,7 +732,7 @@ static void desenhar_personagens(const Jogo *jogo) {
         folhas[qtd] = spriteMordomo; pes[qtd++] = PES_MORDOMO;
     } else if (sala == jogo->salas->proxSala) {                  // jardim: garçons atrás do balcão
         folhas[qtd] = spriteGarcom; pes[qtd++] = PES_GARCOM1;
-        folhas[qtd] = spriteGarcom; pes[qtd++] = PES_GARCOM2;
+        folhas[qtd] = spriteGarcom2; pes[qtd++] = PES_GARCOM2;
     } else if (jogo->poraoAberto && sala->fundo.id == 0) {       // porão
         folhas[qtd] = spriteOtavio; pes[qtd++] = PES_OTAVIO;
     }
