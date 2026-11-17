@@ -19,6 +19,7 @@ static Texture2D spriteMordomo;    // 64x32: 2 quadros de 32x32 (parado, respira
 static Texture2D spriteOtavio;     // empresario.png
 static Texture2D spriteGarcom;     // garcom.png (mesmo formato do mordomo)
 static Texture2D spriteGarcom2;    // garcom2.png (outro garçom, cores diferentes)
+static Texture2D spriteConvidado[3]; // convidado1..3.png: convidados sentados nas mesas
 static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para ajustar o mapa)
 
 static Texture2D carregar_pixel_art(const char *caminho) {
@@ -35,6 +36,8 @@ void jogo_carregar_recursos(void) {
     spriteOtavio  = carregar_pixel_art("assets/empresario.png");
     spriteGarcom  = carregar_pixel_art("assets/garcom.png");
     spriteGarcom2 = carregar_pixel_art("assets/garcom2.png");
+    for (int i = 0; i < 3; i++)
+        spriteConvidado[i] = carregar_pixel_art(TextFormat("assets/convidado%d.png", i + 1));
     jogador_anim_iniciar((Vector2){ 0, 0 });
 }
 
@@ -45,6 +48,8 @@ void jogo_liberar_recursos(void) {
     if (spriteOtavio.id != 0)  UnloadTexture(spriteOtavio);
     if (spriteGarcom.id != 0)  UnloadTexture(spriteGarcom);
     if (spriteGarcom2.id != 0) UnloadTexture(spriteGarcom2);
+    for (int i = 0; i < 3; i++)
+        if (spriteConvidado[i].id != 0) UnloadTexture(spriteConvidado[i]);
     jogador_anim_finalizar();
 }
 
@@ -723,6 +728,37 @@ static void desenhar_npc(Texture2D folha, Rectangle pes) {
 #define PES_GARCOM1 ((Rectangle){ 178, 500, 32, 24 })
 #define PES_GARCOM2 ((Rectangle){ 238, 515, 32, 24 })
 
+/* ---------- convidados sentados (só decoração, sem colisão nem diálogo) ----------
+   'assento' é o ponto do assento da cadeira: centro em x, altura do quadril em y.
+   sala: 0 = salão, 1 = jardim. */
+typedef struct {
+    int sala;
+    int sprite;          // índice em spriteConvidado
+    Vector2 assento;
+    bool espelhar;       // vira o sprite para olhar para a mesa
+} Convidado;
+
+static const Convidado convidados[] = {
+    { 0, 0, { 152, 222 }, false },   // salão, mesa de cima à esquerda
+    { 0, 1, { 1163, 226 }, true },   // salão, mesa de cima à direita
+    { 0, 2, { 180, 560 }, false },   // salão, mesa de baixo à esquerda
+    { 0, 0, { 1110, 568 }, true },   // salão, mesa de baixo à direita
+    { 1, 1, { 266, 272 }, false },   // jardim, mesa de cima à esquerda
+    { 1, 2, { 1004, 276 }, true },   // jardim, mesa de cima à direita
+};
+#define LINHA_QUADRIL 26   // linha da folha 32x32 onde o corpo termina (corta as pernas)
+
+static void desenhar_convidado(const Convidado *c) {
+    Texture2D folha = spriteConvidado[c->sprite];
+    if (folha.id == 0) return;
+    int quadro = ((int)(GetTime() * 1.5 + c->sprite)) % 2;
+    float lado = 32.0f * ESCALA_MUNDO;
+    Rectangle origem  = { quadro * 32.0f, 0, c->espelhar ? -32.0f : 32.0f, LINHA_QUADRIL };
+    Rectangle destino = { c->assento.x - lado / 2, c->assento.y - LINHA_QUADRIL * ESCALA_MUNDO,
+                          lado, LINHA_QUADRIL * ESCALA_MUNDO };
+    DrawTexturePro(folha, origem, destino, (Vector2){ 0, 0 }, 0, WHITE);
+}
+
 static void desenhar_personagens(const Jogo *jogo) {
     const Sala *sala = jogo->jogador.salaAtual;
     Texture2D folhas[2];
@@ -737,13 +773,19 @@ static void desenhar_personagens(const Jogo *jogo) {
         folhas[qtd] = spriteOtavio; pes[qtd++] = PES_OTAVIO;
     }
 
+    int salaConvidados = (sala == jogo->salas) ? 0 : (sala == jogo->salas->proxSala) ? 1 : -1;
+
     // quem está mais "para baixo" na tela é desenhado por cima (profundidade)
     float pesBruno = jogo->jogador.posicao.y + ALTURA_JOGADOR;
+    for (int i = 0; i < QTD(convidados); i++)
+        if (convidados[i].sala == salaConvidados && convidados[i].assento.y <= pesBruno) desenhar_convidado(&convidados[i]);
     for (int i = 0; i < qtd; i++)
         if (pes[i].y + pes[i].height <= pesBruno) desenhar_npc(folhas[i], pes[i]);
     jogador_anim_desenhar(jogo->jogador.posicao, LARGURA_JOGADOR, ALTURA_JOGADOR);
     for (int i = 0; i < qtd; i++)
         if (pes[i].y + pes[i].height > pesBruno) desenhar_npc(folhas[i], pes[i]);
+    for (int i = 0; i < QTD(convidados); i++)
+        if (convidados[i].sala == salaConvidados && convidados[i].assento.y > pesBruno) desenhar_convidado(&convidados[i]);
 }
 
 static void desenhar_explorando(const Jogo *jogo)
