@@ -1,5 +1,6 @@
 #include <string.h>
 #include "raylib.h"
+#include "tela.h"
 #include "ui.h"
 
 /* Quebra o texto em linhas que cabem na largura e desenha. */
@@ -56,7 +57,7 @@ bool dialogo_atualizar(Dialogo *d) {
 
 void dialogo_desenhar(const Dialogo *d) {
     if (!d->aberto) return;
-    int w = GetScreenWidth(), h = GetScreenHeight();
+    int w = TELA_LARGURA, h = TELA_ALTURA;
     Rectangle caixa = { 20, h - 160, w - 40, 140 };
 
     DrawRectangleRec(caixa, Fade(BLACK, 0.9f));
@@ -91,7 +92,7 @@ int escolha_atualizar(Escolha *e) {
 
 void escolha_desenhar(const Escolha *e) {
     if (!e->aberta) return;
-    int w = GetScreenWidth();
+    int w = TELA_LARGURA;
     int alturaCaixa = 70 + e->n * 36;
     Rectangle caixa = { w / 2 - 220, 120, 440, alturaCaixa };
 
@@ -126,7 +127,7 @@ void aviso_atualizar(float dt) {
 void aviso_desenhar(void) {
     if (avisoTempo <= 0) return;
     int tam = 24, larg = MeasureText(avisoTexto, tam);
-    int x = GetScreenWidth() / 2 - larg / 2;
+    int x = TELA_LARGURA / 2 - larg / 2;
     float alfa = avisoTempo < 0.5f ? avisoTempo / 0.5f : 1.0f;   /* some suavemente */
     DrawRectangle(x - 14, 20, larg + 28, 40, Fade(BLACK, 0.8f * alfa));
     DrawText(avisoTexto, x, 28, tam, Fade(GOLD, alfa));

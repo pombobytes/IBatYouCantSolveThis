@@ -3,10 +3,17 @@
 
 #define DISTANCIA_INTERACAO 20
 
+#define QTD(v) ((int)(sizeof(v) / sizeof((v)[0])))   // quantidade de itens de um vetor
+
 static const char *titulo = "I Bat You Can't Solve It";
-static const char *subtitulo = "Press ENTER";
+static const char *subtitulo = "Pressione ENTER para começar";
+static const char *controles = "WASD/Setas: andar   E: interagir   I: linha do tempo   F11: tela cheia";
 static const int tamanhoFonte = 40;
 static const int tamanhoFonteSub = 20;
+
+/* Posição inicial do Bruno no salão (longe da mesa e das portas) */
+#define SPAWN_X 624.0f
+#define SPAWN_Y 470.0f
 
 
 void jogo_iniciar(Jogo *jogo)
@@ -14,11 +21,21 @@ void jogo_iniciar(Jogo *jogo)
     jogo->estado = MENU;
     jogo->tempoRestante = TEMPO_TOTAL;
     jogo->salas = salas_criar();
-    jogador_iniciar(&jogo->jogador, jogo->salas,(Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f });
+    jogador_iniciar(&jogo->jogador, jogo->salas, (Vector2){ SPAWN_X, SPAWN_Y });
     jogo->interativoProximo = -1;
     jogo->dialogo.aberto = false;
     jogo->poraoAberto = false;
     jogo->telaInventario.aberta = false;
+
+    jogo->puzzleAtual = PUZZLE_NENHUM;
+    jogo->leuBilhete = false;
+    jogo->salaoResolvido = false;
+    jogo->jardimResolvido = false;
+    jogo->galeriaResolvida = false;
+    jogo->jardimPenalizado = false;
+    jogo->galeriaPenalizada = false;
+    jogo->terminarAposDialogo = false;
+    jogo->resultadoPendente = RESULTADO_NENHUM;
 
     jogo->relogioLiberado = false;
     jogo->acusouCerto = false;
@@ -30,6 +47,27 @@ void jogo_iniciar(Jogo *jogo)
 static void jogo_terminar(Jogo *jogo, ResultadoFinal resultado) {
     jogo->resultado = resultado;
     jogo->estado = FIM;
+}
+
+/* ---------------- auxiliares usados pelas interações ---------------- */
+
+// Abre uma sequência de falas (fila do ui.h) e vai para o estado DIALOGO
+static void abrir_dialogo(Jogo *jogo, const char *quem, const char *falas[], int n) {
+    dialogo_abrir(&jogo->dialogo, quem, falas, n);
+    jogo->estado = DIALOGO;
+}
+
+// Coloca uma pista na linha do tempo; avisa só se ela for nova
+static void coletar_pista(Jogo *jogo, const char *texto, int horario) {
+    if (jogador_coletar_fala(&jogo->jogador, texto, horario)) {
+        aviso_mostrar("Pista adicionada à linha do tempo", 2.0f);
+    }
+}
+
+// Penalidade de tempo com aviso na tela
+static void penalizar(Jogo *jogo, int minutos, const char *motivo) {
+    jogo_penalizar(jogo, minutos);
+    aviso_mostrar(TextFormat("-%d min: %s", minutos, motivo), 3.0f);
 }
 
 static void atualizar_menu(Jogo *jogo)
@@ -68,6 +106,110 @@ static int buscar_interativo_proximo(const Jogo *jogo) {
     return -1;
 }
 
+/* ---------------- Salão: a charada do bilhete ----------------
+   No verso do bilhete: "Tenho teclas, mas não abro portas. Tenho cauda,
+   mas não sou bicho." -> o piano (de cauda). Objeto errado custa 2 min. */
+static void interagir_objeto_errado_salao(Jogo *jogo, const char *descricao) {
+    const char *falas[] = { descricao };
+    if (jogo->leuBilhete && !jogo->salaoResolvido) {
+        penalizar(jogo, 2, "não era isso");
+    }
+    abrir_dialogo(jogo, "Bruno", falas, 1);
+}
+
+static void interagir_piano(Jogo *jogo) {
+    if (jogo->salaoResolvido) {
+        static const char *falas[] = { "Já examinei o piano. Não há mais nada aqui." };
+        abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        return;
+    }
+    if (!jogo->leuBilhete) {
+        static const char *falas[] = { "Um piano de cauda. Bonito, mas não vejo nada de estranho... por enquanto." };
+        abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        return;
+    }
+    static const char *falas[] = {
+        "\"Tenho teclas, mas não abro portas. Tenho cauda, mas não sou bicho.\" É o piano!",
+        "Escondidos dentro da tampa: a lista de convidados com os horários de chegada... e um bilhete do mordomo.",
+        "\"22h05: dei corda no relógio do salão. Depois disso, a chave de corda sumiu.\"",
+        "Alguém mexeu no relógio depois das 22h05. Os garçons do jardim devem ter visto algo."
+    };
+    abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+    coletar_pista(jogo, "Lista de convidados: Otávio, Helena e o Sr. Almeida chegaram antes das 22h.", HORARIO(21, 30));
+    coletar_pista(jogo, "O Sr. Almeida deu corda no relógio do salão; depois disso, a chave de corda sumiu.", HORARIO(22, 5));
+    jogo->salaoResolvido = true;
+}
+
+/* ---------------- Jardim: garçons (puzzle) e a fonte (porão) ---------------- */
+static void interagir_garcons(Jogo *jogo) {
+    if (jogo->jardimResolvido) {
+        static const char *falas[] = { "Os garçons já me disseram tudo o que sabiam." };
+        abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        return;
+    }
+    // a ordem importa: sem a lista de convidados do salão, demora mais
+    if (!jogo->salaoResolvido && !jogo->jardimPenalizado) {
+        penalizar(jogo, 15, "sem a lista de convidados do salão");
+        jogo->jardimPenalizado = true;
+    }
+    jardim_iniciar(&jogo->puzzleJardim);
+    jogo->puzzleAtual = PUZZLE_JARDIM;
+    jogo->estado = PUZZLE;
+}
+
+static void interagir_fonte(Jogo *jogo) {
+    if (jogo->poraoAberto) {
+        static const char *falas[] = { "A passagem para o porão continua aberta, à direita." };
+        abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        return;
+    }
+    if (!jogo->galeriaResolvida) {
+        static const char *falas[] = {
+            "Uma fonte antiga. Quatro ladrilhos numerados em volta estão mais gastos: 1, 4, 7 e 8.",
+            "Alguém pisa neles com frequência... mas em que ordem?"
+        };
+        abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        return;
+    }
+    static const char *falas[] = {
+        "1847... o ano do quadro mais antigo! 1, 8, 4, 7.",
+        "(Os ladrilhos afundam um a um. A fonte desliza e revela uma escada.)",
+        "Uma passagem secreta para o porão. Quem plantou a bomba pode estar lá embaixo."
+    };
+    jogo_abrir_porao(jogo);
+    abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+}
+
+/* ---------------- Galeria: os quadros do leilão (puzzle) ---------------- */
+static void interagir_quadros(Jogo *jogo) {
+    if (jogo->galeriaResolvida) {
+        static const char *falas[] = { "Os quadros já estão em ordem. A moldura do mais antigo continua aberta." };
+        abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        return;
+    }
+    // a ordem importa: sem o depoimento do jardim, o jogador não ganha a dica
+    if (!jogo->jardimResolvido && !jogo->galeriaPenalizada) {
+        penalizar(jogo, 15, "sem o depoimento dos garçons");
+        jogo->galeriaPenalizada = true;
+    }
+    galeria_iniciar(&jogo->puzzleGaleria, jogo->jardimResolvido);
+    jogo->puzzleAtual = PUZZLE_GALERIA;
+    jogo->estado = PUZZLE;
+}
+
+/* ---------------- Porão: confronto com Otávio (final muito bom) ---------------- */
+static void interagir_otavio(Jogo *jogo) {
+    static const char *falas[] = {
+        "Otávio: Bruno?! Como você achou este lugar?",
+        "Bruno: Os ladrilhos, a moldura, as luvas. Você deixou um rastro, Otávio.",
+        "(Antes que ele alcance o detonador, Bruno o imobiliza. O detonador cai e se apaga.)"
+    };
+    jogo->capturouNoPorao = true;
+    jogo->terminarAposDialogo = true;
+    jogo->resultadoPendente = final_decidir(true, false, false, false);   // muito bom
+    abrir_dialogo(jogo, NULL, falas, QTD(falas));
+}
+
 static void jogo_interagir(Jogo *jogo) {
     const Interativo *obj = &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
     switch (obj->id) {
@@ -77,15 +219,13 @@ static void jogo_interagir(Jogo *jogo) {
                 "TSC!",
                 "Meia-noite... Tenho menos de uma hora. E não posso causar pânico entre os convidados.",
                 "Quem escreveu isso sabe quem eu sou. Ou quer que eu jogue o jogo dele.",
-                "Sem o traje, sem ajuda. Só eu e o que eu conseguir descobrir nesta mansão."
+                "Sem o traje, sem ajuda. Só eu e o que eu conseguir descobrir nesta mansão.",
+                "(No verso) \"Tenho teclas, mas não abro portas. Tenho cauda, mas não sou bicho.\"",
+                "Uma charada. A resposta deve estar aqui no salão."
             };
-            int qtdFalas = sizeof(falas) / sizeof(falas[0]);
-            dialogo_abrir(&jogo->dialogo, "Bruno", falas, qtdFalas);
-
-            if (jogador_coletar_fala(&jogo->jogador, "Bilhete: \"Uma bomba explodirá à meia-noite.\"", HORARIO(23, 0))) {
-                aviso_mostrar("Pista adicionada à linha do tempo", 2.0f);
-            }
-            jogo->estado = DIALOGO;
+            abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+            coletar_pista(jogo, "Bilhete: \"Uma bomba explodirá à meia-noite.\"", HORARIO(23, 0));
+            jogo->leuBilhete = true;
             break;
         }
         case OBJ_RELOGIO: {
@@ -94,9 +234,7 @@ static void jogo_interagir(Jogo *jogo) {
                     "O relógio parou... e tem algo escondido no mecanismo.",
                     "Ainda não sei o suficiente. Preciso de mais pistas antes de mexer nisso."
                 };
-                dialogo_abrir(&jogo->dialogo, "Bruno",
-                              falasTravado, sizeof(falasTravado) / sizeof(falasTravado[0]));
-                jogo->estado = DIALOGO;
+                abrir_dialogo(jogo, "Bruno", falasTravado, QTD(falasTravado));
             } else {
                 // primeiro a acusação; quando ela termina, começa a bomba
                 acusacao_iniciar(&jogo->acusacao, &jogo->jogador.inventario);
@@ -104,6 +242,14 @@ static void jogo_interagir(Jogo *jogo) {
             }
             break;
         }
+        case OBJ_PIANO:      interagir_piano(jogo); break;
+        case OBJ_TACA:       interagir_objeto_errado_salao(jogo, "Uma taça de champanhe pela metade. Nada de especial."); break;
+        case OBJ_CARDAPIO:   interagir_objeto_errado_salao(jogo, "O cardápio da gala. Lagosta... não é hora para isso."); break;
+        case OBJ_REPERTORIO: interagir_objeto_errado_salao(jogo, "O repertório da banda. Só valsas."); break;
+        case OBJ_GARCONS:    interagir_garcons(jogo); break;
+        case OBJ_FONTE:      interagir_fonte(jogo); break;
+        case OBJ_QUADROS:    interagir_quadros(jogo); break;
+        case OBJ_OTAVIO:     interagir_otavio(jogo); break;
         // acrescentem aqui o case do objeto de vcs
         default:
             break;
@@ -143,7 +289,7 @@ static void atualizar_explorando(Jogo *jogo)
     }
 
     //troca de sala
-    int larguraTela = GetScreenWidth();
+    int larguraTela = TELA_LARGURA;
     if (jogo->jogador.posicao.x + LARGURA_JOGADOR > larguraTela)
     {
         jogo->jogador.salaAtual = sala_ir_direita(jogo->jogador.salaAtual);
@@ -155,7 +301,7 @@ static void atualizar_explorando(Jogo *jogo)
         jogo->jogador.posicao.x = larguraTela - LARGURA_JOGADOR;
     }
 
-    int alturaTela = GetScreenHeight();
+    int alturaTela = TELA_ALTURA;
     //borda de cima
     if(jogo->jogador.posicao.y < 0){
         jogo->jogador.posicao.y = 0;
@@ -189,6 +335,58 @@ static void atualizar_explorando(Jogo *jogo)
 
 static void atualizar_dialogo(Jogo *jogo) {
     if(dialogo_atualizar(&jogo->dialogo) ==  true){
+        if (jogo->terminarAposDialogo) {           // ex.: confronto no porão
+            jogo->terminarAposDialogo = false;
+            jogo_terminar(jogo, jogo->resultadoPendente);
+        } else {
+            jogo->estado = EXPLORANDO;
+        }
+    }
+}
+
+/* Puzzles do jardim e da galeria (estado PUZZLE) */
+static void atualizar_puzzle(Jogo *jogo) {
+    if (jogo->puzzleAtual == PUZZLE_JARDIM) {
+        ResultadoPuzzle r = jardim_atualizar(&jogo->puzzleJardim);
+        if (r == PZ_ACERTOU) {
+            static const char *falas[] = {
+                "Bruno: Edu, você acusou o Davi, mas o Fábio confirma tudo o que ele disse. Quem mente é você.",
+                "Edu: Tá bom! Um convidado me pagou para dizer que ninguém foi à fonte...",
+                "Davi: E tem mais: o Sr. Otávio passou a noite olhando para o quadro mais antigo da galeria."
+            };
+            coletar_pista(jogo, "Caio: a Sra. Helena saiu da galeria para atender um telefonema.", HORARIO(22, 10));
+            coletar_pista(jogo, "Davi viu o Sr. Otávio mexendo na fonte do jardim.", HORARIO(22, 20));
+            jogo->jardimResolvido = true;
+            jogo->puzzleAtual = PUZZLE_NENHUM;
+            abrir_dialogo(jogo, "Garçons", falas, QTD(falas));
+        } else if (r == PZ_ERROU) {
+            static const char *falas[] = {
+                "Os garçons se entreolham. Acusei a pessoa errada... Preciso ouvir de novo com mais atenção."
+            };
+            penalizar(jogo, 5, "acusou o garçom errado");
+            jogo->puzzleAtual = PUZZLE_NENHUM;
+            abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        }
+    } else if (jogo->puzzleAtual == PUZZLE_GALERIA) {
+        ResultadoPuzzle r = galeria_atualizar(&jogo->puzzleGaleria);
+        if (r == PZ_ACERTOU) {
+            static const char *falas[] = {
+                "Em ordem! E a moldura do quadro mais antigo, de 1847, está solta...",
+                "Alguém a abriu com luvas: ficou uma marca de couro na madeira.",
+                "E o Sr. Otávio... estava de luvas no começo da festa. Às 22h50 ele voltou ao salão sem elas.",
+                "Já tenho o bastante. É hora de abrir o relógio do salão."
+            };
+            coletar_pista(jogo, "A moldura do quadro mais antigo foi aberta; há uma marca de luva nela.", HORARIO(22, 40));
+            coletar_pista(jogo, "O Sr. Otávio voltou ao salão sem as luvas que usava no começo da festa.", HORARIO(22, 50));
+            jogo->galeriaResolvida = true;
+            jogo_liberar_relogio(jogo);
+            jogo->puzzleAtual = PUZZLE_NENHUM;
+            abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
+        } else if (r == PZ_SAIU) {
+            jogo->puzzleAtual = PUZZLE_NENHUM;
+            jogo->estado = EXPLORANDO;
+        }
+    } else {
         jogo->estado = EXPLORANDO;
     }
 }
@@ -266,6 +464,9 @@ void jogo_atualizar(Jogo *jogo)
     case INVENTARIO:
         atualizar_inventario(jogo);
         break;
+    case PUZZLE:
+        atualizar_puzzle(jogo);
+        break;
     case ACUSACAO:
         atualizar_acusacao(jogo);
         break;
@@ -283,8 +484,8 @@ void jogo_atualizar(Jogo *jogo)
 static void desenhar_menu(const Jogo *jogo)
 {
     (void)jogo;
-    int larguraTela = GetScreenWidth();
-    int alturaTela = GetScreenHeight();
+    int larguraTela = TELA_LARGURA;
+    int alturaTela = TELA_ALTURA;
     int larguraTexto = MeasureText(titulo, tamanhoFonte);
 
     int x = (larguraTela - larguraTexto) / 2;
@@ -298,41 +499,14 @@ static void desenhar_menu(const Jogo *jogo)
     int ySub = y + 60;
 
     DrawText(subtitulo, xSub, ySub, tamanhoFonteSub, GRAY);
+
+    int larguraControles = MeasureText(controles, 18);
+    DrawText(controles, (larguraTela - larguraControles) / 2, alturaTela - 60, 18, DARKGRAY);
 }
 
-static void desenhar_explorando(const Jogo *jogo)
+/* Relógio da bomba (23:00 -> 00:00), alinhado pela direita em xDireita */
+static void desenhar_relogio(const Jogo *jogo, int xDireita, int y)
 {
-    int larguraTela = GetScreenWidth();
-    int alturaTela = GetScreenHeight();
-
-    // fundo com a cor da sala atual
-    DrawRectangle(0, 0, larguraTela, alturaTela, jogo->jogador.salaAtual->corFundo);
-
-    // nome da sala no canto superior esquerdo
-    DrawText(jogo->jogador.salaAtual->nome, 20, 20, 30, WHITE);
-    
-    //obstaculo desenho
-    for (int i = 0; i < jogo->jogador.salaAtual->qtdObstaculos; i++) {
-        DrawRectangleRec(jogo->jogador.salaAtual->obstaculos[i], DARKGRAY);
-    }
-    
-    //interativo desenho
-    for(int i = 0; i < jogo->jogador.salaAtual->qntdInterativo; i++){
-        DrawRectangleRec(jogo->jogador.salaAtual->interativos[i].area, YELLOW);
-    }
-
-    
-    
-    // jogador (BRUNO)
-    DrawRectangle((int)jogo->jogador.posicao.x, (int)jogo->jogador.posicao.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
-    
-    //interativo aviso
-    if (jogo->interativoProximo != -1 && jogo->estado == EXPLORANDO) {
-        const Interativo *obj =  &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
-        const char *aviso = TextFormat("[E] %s", obj->rotulo);
-        DrawText(aviso, (int)jogo->jogador.posicao.x, ((int)jogo->jogador.posicao.y - 25),  20, GOLD);
-    }
-    
     float tempoPassado = TEMPO_TOTAL - jogo->tempoRestante;
     int minutos = tempoPassado * 60 / TEMPO_TOTAL;
 
@@ -353,7 +527,50 @@ static void desenhar_explorando(const Jogo *jogo)
     {
         corRelogio = RED;
     }
-    DrawText(relogio, larguraTela - larguraRelogio - 20, 20, tamanhoRelogio, corRelogio);
+    DrawText(relogio, xDireita - larguraRelogio, y, tamanhoRelogio, corRelogio);
+}
+
+static void desenhar_explorando(const Jogo *jogo)
+{
+    int larguraTela = TELA_LARGURA;
+    int alturaTela = TELA_ALTURA;
+
+    // fundo com a cor da sala atual
+    DrawRectangle(0, 0, larguraTela, alturaTela, jogo->jogador.salaAtual->corFundo);
+
+    const Sala *sala = jogo->jogador.salaAtual;
+
+    //obstaculo desenho: os NUM_PAREDES primeiros são as paredes; o resto, móveis
+    Color corParede = ColorBrightness(sala->corFundo, -0.55f);
+    for (int i = 0; i < sala->qtdObstaculos; i++) {
+        DrawRectangleRec(sala->obstaculos[i], i < NUM_PAREDES ? corParede : DARKGRAY);
+    }
+
+    // portas: as aberturas nas paredes laterais
+    DrawRectangle(0, PORTA_Y, PAREDE_ESPESSURA, PORTA_ALTURA, Fade(GOLD, 0.35f));
+    DrawRectangle(larguraTela - PAREDE_ESPESSURA, PORTA_Y, PAREDE_ESPESSURA, PORTA_ALTURA, Fade(GOLD, 0.35f));
+
+    //interativo desenho
+    for(int i = 0; i < sala->qntdInterativo; i++){
+        DrawRectangleRec(sala->interativos[i].area, Fade(YELLOW, 0.85f));
+    }
+
+    // nome da sala no canto superior esquerdo (por cima da parede)
+    DrawText(sala->nome, 40, 34, 30, WHITE);
+
+    
+    
+    // jogador (BRUNO)
+    DrawRectangle((int)jogo->jogador.posicao.x, (int)jogo->jogador.posicao.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
+    
+    //interativo aviso
+    if (jogo->interativoProximo != -1 && jogo->estado == EXPLORANDO) {
+        const Interativo *obj =  &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
+        const char *aviso = TextFormat("[E] %s", obj->rotulo);
+        DrawText(aviso, (int)jogo->jogador.posicao.x, ((int)jogo->jogador.posicao.y - 25),  20, GOLD);
+    }
+    
+    desenhar_relogio(jogo, larguraTela - 40, 34);
 }
 
 static void desenhar_dialogo(const Jogo *jogo) {
@@ -367,16 +584,23 @@ static void desenhar_inventario(const Jogo *jogo) {
     inventario_tela_desenhar(&jogo->telaInventario, &jogo->jogador.inventario);
 }
 
+static void desenhar_puzzle(const Jogo *jogo) {
+    desenhar_explorando(jogo);
+    if (jogo->puzzleAtual == PUZZLE_JARDIM)        jardim_desenhar(&jogo->puzzleJardim);
+    else if (jogo->puzzleAtual == PUZZLE_GALERIA)  galeria_desenhar(&jogo->puzzleGaleria);
+}
+
 static void desenhar_acusacao(const Jogo *jogo) {
     desenhar_explorando(jogo);
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.6f));
+    DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, Fade(BLACK, 0.6f));
     acusacao_desenhar(&jogo->acusacao, &jogo->jogador.inventario);
 }
 
 static void desenhar_bomba(const Jogo *jogo) {
     desenhar_explorando(jogo);   // mantém o relógio da bomba visível no canto
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
+    DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, Fade(BLACK, 0.85f));
     bomba_desenhar(&jogo->bomba);
+    desenhar_relogio(jogo, TELA_LARGURA - 40, TELA_ALTURA - 70);   // o tempo continua correndo
     inventario_tela_desenhar(&jogo->telaInventario, &jogo->jogador.inventario); // só aparece se aberta
 }
 
@@ -399,6 +623,9 @@ void jogo_desenhar(const Jogo *jogo)
         break;
     case INVENTARIO:
         desenhar_inventario(jogo);
+        break;
+    case PUZZLE:
+        desenhar_puzzle(jogo);
         break;
     case ACUSACAO:
         desenhar_acusacao(jogo);
@@ -435,6 +662,12 @@ void jogo_abrir_porao(Jogo *jogo) {
     Sala *jardim = jogo->salas->proxSala;
     Sala *porao  = sala_inserir_depois(jardim, "Porão", (Color){ 12, 15, 25, 255 });
     if(porao != NULL){
+        // caixas de contrabando e o culpado com o detonador
+        sala_adicionar_obstaculo(porao, (Rectangle){ 300, 150, 90, 90 });
+        sala_adicionar_obstaculo(porao, (Rectangle){ 700, 500, 90, 90 });
+        Rectangle otavio = { 900, 336, 32, 48 };
+        sala_adicionar_obstaculo(porao, otavio);
+        sala_adicionar_interativo(porao, OBJ_OTAVIO, otavio, "Confrontar Otávio");
         jogo->poraoAberto = true;
     }
 }

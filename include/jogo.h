@@ -1,8 +1,10 @@
 #ifndef JOGO_H
 #define JOGO_H
 
-#include "raylib.h" 
+#include "raylib.h"
+#include "tela.h"
 #include "final.h"   // já inclui ui.h, inventario_tela.h e jogador.h
+#include "puzzles.h"
 #define VELOCIDADE_JOGADOR 250.0f
 #define TEMPO_TOTAL 600.0f
 #define LARGURA_JOGADOR 32
@@ -29,6 +31,21 @@ typedef struct {
     Dialogo dialogo;   // texto mostrado no estado DIALOGO
     bool poraoAberto;
     TelaInventario telaInventario;
+
+    // puzzles e "a ordem importa" (Salão -> Jardim -> Galeria)
+    PuzzleId puzzleAtual;       // qual puzzle está aberto no estado PUZZLE
+    PuzzleJardim puzzleJardim;
+    PuzzleGaleria puzzleGaleria;
+    bool leuBilhete;            // a charada do salão está no verso do bilhete
+    bool salaoResolvido;
+    bool jardimResolvido;
+    bool galeriaResolvida;
+    bool jardimPenalizado;      // a penalidade de ordem só é aplicada uma vez
+    bool galeriaPenalizada;
+
+    // diálogo que, ao fechar, termina o jogo (ex.: confronto no porão)
+    bool terminarAposDialogo;
+    ResultadoFinal resultadoPendente;
 
     // fim de jogo
     bool relogioLiberado;     // o relógio (bomba) só abre depois de liberado
