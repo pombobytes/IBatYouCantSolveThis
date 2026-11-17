@@ -545,7 +545,7 @@ void jogo_atualizar(Jogo *jogo)
     }
 }
 
-/* Painel escuro centralizado usado pelas telas de controles e créditos */
+// Painel escuro centralizado usado pelas telas de controles e créditos 
 static Rectangle desenhar_painel_menu(const char *tituloPainel)
 {
     Rectangle painel = { 290, 120, 700, 480 };
@@ -555,8 +555,7 @@ static Rectangle desenhar_painel_menu(const char *tituloPainel)
     int lt = MeasureText(tituloPainel, 34);
     DrawText(tituloPainel, (int)(painel.x + (painel.width - lt) / 2), (int)painel.y + 30, 34, (Color){ 230, 226, 218, 255 });
     const char *voltar = "ESC ou ENTER: voltar";
-    DrawText(voltar, (int)(painel.x + (painel.width - MeasureText(voltar, 18)) / 2),
-             (int)(painel.y + painel.height) - 40, 18, GRAY);
+    DrawText(voltar, (int)(painel.x + (painel.width - MeasureText(voltar, 18)) / 2),(int)(painel.y + painel.height) - 40, 18, GRAY);
     return painel;
 }
 
