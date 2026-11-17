@@ -3,6 +3,7 @@
 
 #include "raylib.h" 
 #include "inventario_tela.h"
+#include "ui.h"
 #define VELOCIDADE_JOGADOR 250.0f
 #define TEMPO_TOTAL 600.0f
 #define LARGURA_JOGADOR 32
@@ -27,7 +28,7 @@ typedef struct {
     Jogador jogador;   // posição, sala atual e inventário do Bruno
     Sala *salas;
     int interativoProximo;   // índice do objeto perto do Bruno na sala atual, ou -1
-    const char *textoDialogo;   // texto mostrado no estado DIALOGO
+    Dialogo dialogo;   // texto mostrado no estado DIALOGO
     bool poraoAberto;
     TelaInventario telaInventario;
 } Jogo;

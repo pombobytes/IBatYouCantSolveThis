@@ -16,7 +16,7 @@ void jogo_iniciar(Jogo *jogo)
     jogo->salas = salas_criar();
     jogador_iniciar(&jogo->jogador, jogo->salas,(Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f });
     jogo->interativoProximo = -1;
-    jogo->textoDialogo = NULL;
+    jogo->dialogo.aberto = false;
     jogo->poraoAberto = false;
 }
 
@@ -58,14 +58,24 @@ static int buscar_interativo_proximo(const Jogo *jogo) {
 
 static void jogo_interagir(Jogo *jogo) {
     const Interativo *obj = &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
-
     switch (obj->id) {
-        case OBJ_BILHETE:
-            jogador_coletar_fala(&jogo->jogador, "Bilhete: \"Uma bomba explodira a meia-noite.\"", HORARIO(23, 0));
-            jogo->textoDialogo = "Uma bomba explodirá à meia-noite.";
+        case OBJ_BILHETE: {
+            static const char *falas[] = {
+                "(Lendo o bilhete) \"Uma bomba explodirá à meia-noite.\"",
+                "TSC!",
+                "Meia-noite... Tenho menos de uma hora. E não posso causar pânico entre os convidados.",
+                "Quem escreveu isso sabe quem eu sou. Ou quer que eu jogue o jogo dele.",
+                "Sem o traje, sem ajuda. Só eu e o que eu conseguir descobrir nesta mansão."
+            };
+            int qtdFalas = sizeof(falas) / sizeof(falas[0]);
+            dialogo_abrir(&jogo->dialogo, "Bruno", falas, qtdFalas);
+
+            if (jogador_coletar_fala(&jogo->jogador, "Bilhete: \"Uma bomba explodirá à meia-noite.\"", HORARIO(23, 0))) {
+                aviso_mostrar("Pista adicionada à linha do tempo", 2.0f);
+            }
             jogo->estado = DIALOGO;
-            //jogo_penalizar(jogo, 15); teste de penalização
-            break;
+            break;    
+        }
         // acrescentem aqui o case do objeto de vcs
         default:
             break;
@@ -145,7 +155,7 @@ static void atualizar_explorando(Jogo *jogo)
 }
 
 static void atualizar_dialogo(Jogo *jogo) {
-    if(IsKeyPressed(KEY_E) || IsKeyPressed(KEY_ENTER)){
+    if(dialogo_atualizar(&jogo->dialogo) ==  true){
         jogo->estado = EXPLORANDO;
     }
 }
@@ -170,6 +180,7 @@ static void atualizar_inventario(Jogo *jogo) {
 
 void jogo_atualizar(Jogo *jogo)
 {
+    aviso_atualizar(GetFrameTime());
     if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE || jogo->estado == INVENTARIO) {
         atualizar_tempo(jogo);
     }    
@@ -270,19 +281,7 @@ static void desenhar_explorando(const Jogo *jogo)
 
 static void desenhar_dialogo(const Jogo *jogo) {
     desenhar_explorando(jogo);   // a sala continua aparecendo por trás
-
-    int larguraTela = GetScreenWidth();
-    int alturaTela  = GetScreenHeight();
-
-    // caixa na parte de baixo da tela
-    Rectangle caixa = { 40, alturaTela - 200, larguraTela - 80, 160 };
-    DrawRectangleRec(caixa, (Color){ 0, 0, 0, 220 });   // preto quase opaco
-    DrawRectangleLinesEx(caixa, 3, WHITE);              // borda
-
-    DrawText(jogo->textoDialogo,(int)caixa.x+30,(int)caixa.y + 30, 28, WHITE);
-    const char *continuar = "[E] continuar";
-    int larguraContinuar = MeasureText(continuar, 18);
-    DrawText(continuar, ((int)(caixa.x + caixa.width) - larguraContinuar - 20), ((int)(caixa.y + caixa.height) - 18 - 15), 18, GRAY);
+    dialogo_desenhar(&jogo->dialogo);
 }
 
 
@@ -310,6 +309,7 @@ void jogo_desenhar(const Jogo *jogo)
     default:
         break;
     }
+    aviso_desenhar();
 }
 
 void jogo_finalizar(Jogo *jogo)
