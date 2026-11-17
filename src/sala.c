@@ -130,6 +130,7 @@ static void montar_jardim(Sala *s) {
     sala_adicionar_obstaculo(s, (Rectangle){ 445, 640, 50, 52 });
     sala_adicionar_obstaculo(s, (Rectangle){ 800, 640, 50, 52 });
     sala_adicionar_obstaculo(s, (Rectangle){ 1110, 600, 100, 92 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 160, 462, 140, 88 });   // atrás do balcão (garçons)
 
     sala_adicionar_interativo(s, OBJ_GARCONS, (Rectangle){ 60, 390, 320, 250 }, "Conversar com os garçons do bar");
     sala_adicionar_interativo(s, OBJ_FONTE,   fonte,                              "Examinar a fonte");
