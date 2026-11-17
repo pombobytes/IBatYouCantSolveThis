@@ -6,6 +6,7 @@
 
 typedef enum {
     OBJ_BILHETE,
+    OBJ_RELOGIO,   // relógio do salão: onde está a bomba (acusação + fios)
     // os colegas acrescentam aqui os ids dos objetos deles
 } ObjetoId;
 

@@ -38,7 +38,8 @@ Sala *salas_criar(void) {
     salao->qtdObstaculos = 1;
     
     salao->interativos[0] =(Interativo){ OBJ_BILHETE, (Rectangle){ 900, 200, 30, 20 }, "Ler o bilhete" };
-    salao->qntdInterativo = 1;
+    salao->interativos[1] = (Interativo){ OBJ_RELOGIO, (Rectangle){ 200, 150, 40, 60 }, "Examinar o relógio" };
+    salao->qntdInterativo = 2;
 
     return salao;
 }

@@ -18,6 +18,18 @@ void jogo_iniciar(Jogo *jogo)
     jogo->interativoProximo = -1;
     jogo->dialogo.aberto = false;
     jogo->poraoAberto = false;
+    jogo->telaInventario.aberta = false;
+
+    jogo->relogioLiberado = false;
+    jogo->acusouCerto = false;
+    jogo->capturouNoPorao = false;
+    jogo->resultado = RESULTADO_NENHUM;
+}
+
+// Termina a partida: escolhe o final e vai para a tela FIM
+static void jogo_terminar(Jogo *jogo, ResultadoFinal resultado) {
+    jogo->resultado = resultado;
+    jogo->estado = FIM;
 }
 
 static void atualizar_menu(Jogo *jogo)
@@ -74,7 +86,23 @@ static void jogo_interagir(Jogo *jogo) {
                 aviso_mostrar("Pista adicionada à linha do tempo", 2.0f);
             }
             jogo->estado = DIALOGO;
-            break;    
+            break;
+        }
+        case OBJ_RELOGIO: {
+            if (!jogo->relogioLiberado) {
+                static const char *falasTravado[] = {
+                    "O relógio parou... e tem algo escondido no mecanismo.",
+                    "Ainda não sei o suficiente. Preciso de mais pistas antes de mexer nisso."
+                };
+                dialogo_abrir(&jogo->dialogo, "Bruno",
+                              falasTravado, sizeof(falasTravado) / sizeof(falasTravado[0]));
+                jogo->estado = DIALOGO;
+            } else {
+                // primeiro a acusação; quando ela termina, começa a bomba
+                acusacao_iniciar(&jogo->acusacao, &jogo->jogador.inventario);
+                jogo->estado = ACUSACAO;
+            }
+            break;
         }
         // acrescentem aqui o case do objeto de vcs
         default:
@@ -152,6 +180,11 @@ static void atualizar_explorando(Jogo *jogo)
     // if(IsKeyPressed(KEY_P)){
     //     jogo_abrir_porao(jogo);
     // }
+
+    //TESTE: libera o relógio sem resolver os puzzles (remover antes da entrega)
+    // if(IsKeyPressed(KEY_L)){
+    //     jogo_liberar_relogio(jogo);
+    // }
 }
 
 static void atualizar_dialogo(Jogo *jogo) {
@@ -166,8 +199,8 @@ static void atualizar_tempo(Jogo *jogo) {
     jogo->tempoRestante -= dt;
     if (jogo->tempoRestante <= 0)
     {
-        jogo->estado = FINAL_RUIM;
         jogo->tempoRestante = 0;
+        jogo_terminar(jogo, RESULTADO_RUIM);   // deu meia-noite
     }
 }
 
@@ -177,13 +210,48 @@ static void atualizar_inventario(Jogo *jogo) {
     }
 }
 
+// Acusação: escolher o suspeito e marcar as provas. Ao confirmar, vai para a bomba.
+static void atualizar_acusacao(Jogo *jogo) {
+    if (acusacao_atualizar(&jogo->acusacao, &jogo->jogador.inventario)) {
+        jogo->acusouCerto = jogo->acusacao.acertou;
+        jogo->telaInventario.aberta = false;
+        bomba_iniciar(&jogo->bomba);
+        jogo->estado = BOMBA;
+    }
+}
+
+// Bomba: cortar os fios. A tecla I abre a linha do tempo por cima, só para consulta.
+static void atualizar_bomba(Jogo *jogo) {
+    if (jogo->telaInventario.aberta) {
+        inventario_tela_atualizar(&jogo->telaInventario, &jogo->jogador.inventario);
+        return;
+    }
+    if (IsKeyPressed(KEY_I)) {
+        inventario_tela_abrir(&jogo->telaInventario, false);
+        return;
+    }
+    if (bomba_atualizar(&jogo->bomba)) {
+        ResultadoFinal r = final_decidir(jogo->capturouNoPorao, jogo->acusouCerto,
+                                         jogo->bomba.desarmada, false);
+        jogo_terminar(jogo, r);
+    }
+}
+
+// Tela de final: ENTER libera tudo e começa uma partida nova (volta ao menu)
+static void atualizar_fim(Jogo *jogo) {
+    if (IsKeyPressed(KEY_ENTER)) {
+        jogo_finalizar(jogo);
+        jogo_iniciar(jogo);
+    }
+}
 
 void jogo_atualizar(Jogo *jogo)
 {
     aviso_atualizar(GetFrameTime());
-    if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE || jogo->estado == INVENTARIO) {
+    if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE ||
+        jogo->estado == INVENTARIO || jogo->estado == ACUSACAO || jogo->estado == BOMBA) {
         atualizar_tempo(jogo);
-    }    
+    }
     switch (jogo->estado)
     {
     case MENU:
@@ -197,6 +265,15 @@ void jogo_atualizar(Jogo *jogo)
         break;
     case INVENTARIO:
         atualizar_inventario(jogo);
+        break;
+    case ACUSACAO:
+        atualizar_acusacao(jogo);
+        break;
+    case BOMBA:
+        atualizar_bomba(jogo);
+        break;
+    case FIM:
+        atualizar_fim(jogo);
         break;
     default:
         break;
@@ -290,6 +367,23 @@ static void desenhar_inventario(const Jogo *jogo) {
     inventario_tela_desenhar(&jogo->telaInventario, &jogo->jogador.inventario);
 }
 
+static void desenhar_acusacao(const Jogo *jogo) {
+    desenhar_explorando(jogo);
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.6f));
+    acusacao_desenhar(&jogo->acusacao, &jogo->jogador.inventario);
+}
+
+static void desenhar_bomba(const Jogo *jogo) {
+    desenhar_explorando(jogo);   // mantém o relógio da bomba visível no canto
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
+    bomba_desenhar(&jogo->bomba);
+    inventario_tela_desenhar(&jogo->telaInventario, &jogo->jogador.inventario); // só aparece se aberta
+}
+
+static void desenhar_fim(const Jogo *jogo) {
+    final_desenhar(jogo->resultado);
+}
+
 void jogo_desenhar(const Jogo *jogo)
 {
     switch (jogo->estado)
@@ -305,6 +399,15 @@ void jogo_desenhar(const Jogo *jogo)
         break;
     case INVENTARIO:
         desenhar_inventario(jogo);
+        break;
+    case ACUSACAO:
+        desenhar_acusacao(jogo);
+        break;
+    case BOMBA:
+        desenhar_bomba(jogo);
+        break;
+    case FIM:
+        desenhar_fim(jogo);
         break;
     default:
         break;
@@ -334,4 +437,9 @@ void jogo_abrir_porao(Jogo *jogo) {
     if(porao != NULL){
         jogo->poraoAberto = true;
     }
+}
+
+// Libera o relógio do salão (acusação + bomba). Chamar quando o último puzzle for resolvido.
+void jogo_liberar_relogio(Jogo *jogo) {
+    jogo->relogioLiberado = true;
 }
