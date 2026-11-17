@@ -3,10 +3,11 @@
 
 #include "raylib.h" 
 #include "sala.h"
-#define VELOCIDADE_JOGADOR 250.0f
+#define ESCALA_MUNDO 3                    
+#define VELOCIDADE_JOGADOR (120.0f * ESCALA_MUNDO)
 #define TEMPO_TOTAL 600.0f
-#define LARGURA_JOGADOR 32
-#define ALTURA_JOGADOR  48
+#define LARGURA_JOGADOR (12 * ESCALA_MUNDO)  
+#define ALTURA_JOGADOR  (8 * ESCALA_MUNDO)
 
 typedef enum {
     MENU, 

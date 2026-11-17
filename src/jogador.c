@@ -2,6 +2,7 @@
 #include <string.h>
 #include "jogador.h"
 
+
 /* ================= JOGADOR ================= */
 
 void jogador_iniciar(Jogador *j, Sala *salaInicial, Vector2 posicao) {

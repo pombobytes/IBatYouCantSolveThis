@@ -18,6 +18,7 @@ typedef struct {
 typedef struct Sala{
     const char * nome;
     Color corFundo;
+    Texture2D fundo;
     Rectangle obstaculos[MAX_OBSTACULOS];
     int qtdObstaculos;
     struct Sala *proxSala;

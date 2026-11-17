@@ -8,11 +8,18 @@ static Sala *sala_nova(const char *nome, Color cor) {
     }
     s->nome = nome;
     s->corFundo = cor; 
+    s->fundo = (Texture2D){ 0 };   // [FUNDO] sem imagem por padrão (ex.: porão)
     s->proxSala = s;
     s->antSala = s;
     s->qtdObstaculos = 0;
     s->qntdInterativo = 0;
     return s;
+}
+
+// [FUNDO] carrega a imagem 640x360 da sala (a janela já está aberta)
+static void sala_definir_fundo(Sala *s, const char *caminho) {
+    s->fundo = LoadTexture(caminho);
+    SetTextureFilter(s->fundo, TEXTURE_FILTER_POINT);   // pixel art sem borrar
 }
 
 Sala *salas_criar(void) {
@@ -27,6 +34,10 @@ Sala *salas_criar(void) {
         return NULL;
     }
 
+    sala_definir_fundo(salao,   "assets/Salao.png");     // [FUNDO]
+    sala_definir_fundo(jardim,  "assets/jardim.png");    // [FUNDO]
+    sala_definir_fundo(galeria, "assets/galeria.png");   // [FUNDO]
+
     salao->proxSala = jardim;
     salao->antSala = galeria;
     jardim->antSala = salao;
@@ -36,7 +47,6 @@ Sala *salas_criar(void) {
 
     salao->obstaculos[0] = (Rectangle){500, 300, 200, 100};
     salao->qtdObstaculos = 1;
-    
     salao->interativos[0] =(Interativo){ OBJ_BILHETE, (Rectangle){ 900, 200, 30, 20 }, "Ler o bilhete" };
     salao->qntdInterativo = 1;
 
@@ -70,6 +80,7 @@ void salas_liberar(Sala *inicio) {
     Sala *atual = inicio;
     while(atual != NULL){
         Sala *proxima = atual->proxSala;
+        if (atual->fundo.id != 0) UnloadTexture(atual->fundo);   // [FUNDO]
         free(atual);
         atual = proxima;
     }

@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include "jogo.h"
+#include "jogador_anim.h"
 
 #define DISTANCIA_INTERACAO 20
+#define DISTANCIA_INTERACAO (10 * ESCALA_MUNDO)
 
 static const char *titulo = "I Bat You Can't Solve It";
 static const char *subtitulo = "Press ENTER";
@@ -20,6 +22,9 @@ void jogo_iniciar(Jogo *jogo)
     jogo->interativoProximo = -1;
     jogo->textoDialogo = NULL;
     jogo->poraoAberto = false;
+
+    // [ANIMACAO] carrega a folha de sprites (a janela ja foi aberta no main.c)
+    jogador_anim_iniciar(jogo->posicaoJogador);
 }
 
 static void atualizar_menu(Jogo *jogo)
@@ -129,6 +134,9 @@ static void atualizar_explorando(Jogo *jogo)
         jogo->posicaoJogador.y = alturaTela - ALTURA_JOGADOR;
     }
 
+    // [ANIMACAO] depois de movimento, colisao e troca de sala
+    jogador_anim_atualizar(jogo->posicaoJogador, dt);
+
     //interação
     jogo->interativoProximo = buscar_interativo_proximo(jogo);
     if(jogo->interativoProximo != -1 && IsKeyPressed(KEY_E)){
@@ -205,7 +213,16 @@ static void desenhar_explorando(const Jogo *jogo)
     int alturaTela = GetScreenHeight();
 
     // fundo com a cor da sala atual
-    DrawRectangle(0, 0, larguraTela, alturaTela, jogo->salaAtual->corFundo);
+    // [FUNDO] imagem 640x360 esticada 2x para a janela; sem imagem usa a cor
+    Texture2D fundo = jogo->salaAtual->fundo;
+    if (fundo.id != 0) {
+        DrawTexturePro(fundo,
+            (Rectangle){ 0, 0, (float)fundo.width, (float)fundo.height },
+            (Rectangle){ 0, 0, (float)larguraTela, (float)alturaTela },
+            (Vector2){ 0, 0 }, 0.0f, WHITE);
+    } else {
+        DrawRectangle(0, 0, larguraTela, alturaTela, jogo->salaAtual->corFundo);
+    }
 
     // nome da sala no canto superior esquerdo
     DrawText(jogo->salaAtual->nome, 20, 20, 30, WHITE);
@@ -223,7 +240,7 @@ static void desenhar_explorando(const Jogo *jogo)
     
     
     // jogador (BRUNO)
-    DrawRectangle((int)jogo->posicaoJogador.x, (int)jogo->posicaoJogador.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
+    jogador_anim_desenhar(jogo->posicaoJogador, LARGURA_JOGADOR, ALTURA_JOGADOR);
     
     //interativo aviso
     if (jogo->interativoProximo != -1 && jogo->estado == EXPLORANDO) {
@@ -293,6 +310,7 @@ void jogo_desenhar(const Jogo *jogo)
 
 void jogo_finalizar(Jogo *jogo)
 {
+    jogador_anim_finalizar();   // [ANIMACAO] libera a textura
     salas_liberar(jogo->salas);
     jogo->salas = NULL;
     jogo->salaAtual = NULL;
