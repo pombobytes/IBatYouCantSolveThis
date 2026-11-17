@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "jogo.h"
+#include "jogador_anim.h"
 
 #define DISTANCIA_INTERACAO 20
 
@@ -14,16 +15,31 @@ static const int tamanhoFonteSub = 20;
 /* ---------------- recursos (imagens) ---------------- */
 static Texture2D fundoMenu;
 static bool fundoMenuOk = false;   // se a imagem não carregar, o menu usa só texto
+static Texture2D spriteMordomo;    // 64x32: 2 quadros de 32x32 (parado, respirando)
+static Texture2D spriteOtavio;     // empresario.png
+static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para ajustar o mapa)
+
+static Texture2D carregar_pixel_art(const char *caminho) {
+    Texture2D t = LoadTexture(caminho);
+    if (t.id != 0) SetTextureFilter(t, TEXTURE_FILTER_POINT);
+    return t;
+}
 
 void jogo_carregar_recursos(void) {
     fundoMenu = LoadTexture("assets/menu.png");
     fundoMenuOk = (fundoMenu.id != 0);
     if (fundoMenuOk) SetTextureFilter(fundoMenu, TEXTURE_FILTER_BILINEAR);
+    spriteMordomo = carregar_pixel_art("assets/mordomo.png");
+    spriteOtavio  = carregar_pixel_art("assets/empresario.png");
+    jogador_anim_iniciar((Vector2){ 0, 0 });
 }
 
 void jogo_liberar_recursos(void) {
     if (fundoMenuOk) UnloadTexture(fundoMenu);
     fundoMenuOk = false;
+    if (spriteMordomo.id != 0) UnloadTexture(spriteMordomo);
+    if (spriteOtavio.id != 0)  UnloadTexture(spriteOtavio);
+    jogador_anim_finalizar();
 }
 
 /* Botões do menu, por cima dos botões desenhados em assets/menu.png
@@ -172,8 +188,9 @@ static int buscar_interativo_proximo(const Jogo *jogo) {
 }
 
 /* ---------------- Salão: a charada do bilhete ----------------
-   No verso do bilhete: "Tenho teclas, mas não abro portas. Tenho cauda,
-   mas não sou bicho." -> o piano (de cauda). Objeto errado custa 2 min. */
+   No verso do bilhete: "Tenho cúpula, mas não sou igreja. Guardo o jantar,
+   mas não sou geladeira." -> a campânula de prata do bufê.
+   Objeto errado custa 2 min. */
 static void interagir_objeto_errado_salao(Jogo *jogo, const char *descricao) {
     const char *falas[] = { descricao };
     if (jogo->leuBilhete && !jogo->salaoResolvido) {
@@ -182,20 +199,20 @@ static void interagir_objeto_errado_salao(Jogo *jogo, const char *descricao) {
     abrir_dialogo(jogo, "Bruno", falas, 1);
 }
 
-static void interagir_piano(Jogo *jogo) {
+static void interagir_campanula(Jogo *jogo) {
     if (jogo->salaoResolvido) {
-        static const char *falas[] = { "Já examinei o piano. Não há mais nada aqui." };
+        static const char *falas[] = { "Já olhei embaixo da campânula. Não há mais nada aqui." };
         abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
         return;
     }
     if (!jogo->leuBilhete) {
-        static const char *falas[] = { "Um piano de cauda. Bonito, mas não vejo nada de estranho... por enquanto." };
+        static const char *falas[] = { "Uma campânula de prata sobre o bufê. Bonita, mas não vejo nada de estranho... por enquanto." };
         abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
         return;
     }
     static const char *falas[] = {
-        "\"Tenho teclas, mas não abro portas. Tenho cauda, mas não sou bicho.\" É o piano!",
-        "Escondidos dentro da tampa: a lista de convidados com os horários de chegada... e um bilhete do mordomo.",
+        "\"Tenho cúpula, mas não sou igreja. Guardo o jantar, mas não sou geladeira.\" É a campânula!",
+        "Embaixo dela, no lugar do assado: a lista de convidados com os horários de chegada... e um bilhete do mordomo.",
         "\"22h05: dei corda no relógio do salão. Depois disso, a chave de corda sumiu.\"",
         "Alguém mexeu no relógio depois das 22h05. Os garçons do jardim devem ter visto algo."
     };
@@ -280,12 +297,13 @@ static void jogo_interagir(Jogo *jogo) {
     switch (obj->id) {
         case OBJ_BILHETE: {
             static const char *falas[] = {
+                "(O mordomo entrega um envelope) \"Deixaram isto para o senhor, Sr. Bruno.\"",
                 "(Lendo o bilhete) \"Uma bomba explodirá à meia-noite.\"",
                 "TSC!",
                 "Meia-noite... Tenho menos de uma hora. E não posso causar pânico entre os convidados.",
                 "Quem escreveu isso sabe quem eu sou. Ou quer que eu jogue o jogo dele.",
                 "Sem o traje, sem ajuda. Só eu e o que eu conseguir descobrir nesta mansão.",
-                "(No verso) \"Tenho teclas, mas não abro portas. Tenho cauda, mas não sou bicho.\"",
+                "(No verso) \"Tenho cúpula, mas não sou igreja. Guardo o jantar, mas não sou geladeira.\"",
                 "Uma charada. A resposta deve estar aqui no salão."
             };
             abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
@@ -307,10 +325,10 @@ static void jogo_interagir(Jogo *jogo) {
             }
             break;
         }
-        case OBJ_PIANO:      interagir_piano(jogo); break;
-        case OBJ_TACA:       interagir_objeto_errado_salao(jogo, "Uma taça de champanhe pela metade. Nada de especial."); break;
-        case OBJ_CARDAPIO:   interagir_objeto_errado_salao(jogo, "O cardápio da gala. Lagosta... não é hora para isso."); break;
-        case OBJ_REPERTORIO: interagir_objeto_errado_salao(jogo, "O repertório da banda. Só valsas."); break;
+        case OBJ_CAMPANULA:  interagir_campanula(jogo); break;
+        case OBJ_PRATOS:     interagir_objeto_errado_salao(jogo, "Pratos de porcelana empilhados. Nada embaixo deles."); break;
+        case OBJ_FLORES:     interagir_objeto_errado_salao(jogo, "Um arranjo de flores na mesa. Só flores."); break;
+        case OBJ_VASO:       interagir_objeto_errado_salao(jogo, "Um vaso de planta. Só terra."); break;
         case OBJ_GARCONS:    interagir_garcons(jogo); break;
         case OBJ_FONTE:      interagir_fonte(jogo); break;
         case OBJ_QUADROS:    interagir_quadros(jogo); break;
@@ -353,18 +371,23 @@ static void atualizar_explorando(Jogo *jogo)
         jogo->jogador.posicao.x = xAntigo;
     }
 
-    //troca de sala
+    //troca de sala: encostou no gatilho de uma porta -> vai para a sala ligada a ela
+    Sala *atual = jogo->jogador.salaAtual;
+    Rectangle bruno = { jogo->jogador.posicao.x, jogo->jogador.posicao.y, LARGURA_JOGADOR, ALTURA_JOGADOR };
+    if (CheckCollisionRecs(bruno, atual->portaProx.gatilho)) {
+        Sala *destino = sala_ir_direita(atual);
+        jogo->jogador.salaAtual = destino;
+        jogo->jogador.posicao = destino->portaAnt.chegada;    // entra pela porta que vem de 'atual'
+    } else if (CheckCollisionRecs(bruno, atual->portaAnt.gatilho)) {
+        Sala *destino = sala_ir_esquerda(atual);
+        jogo->jogador.salaAtual = destino;
+        jogo->jogador.posicao = destino->portaProx.chegada;
+    }
+
+    //bordas da tela (segurança: as paredes já seguram o Bruno)
     int larguraTela = TELA_LARGURA;
-    if (jogo->jogador.posicao.x + LARGURA_JOGADOR > larguraTela)
-    {
-        jogo->jogador.salaAtual = sala_ir_direita(jogo->jogador.salaAtual);
-        jogo->jogador.posicao.x = 0;
-    }
-    if (jogo->jogador.posicao.x < 0)
-    {
-        jogo->jogador.salaAtual = sala_ir_esquerda(jogo->jogador.salaAtual);
-        jogo->jogador.posicao.x = larguraTela - LARGURA_JOGADOR;
-    }
+    if (jogo->jogador.posicao.x < 0) jogo->jogador.posicao.x = 0;
+    if (jogo->jogador.posicao.x + LARGURA_JOGADOR > larguraTela) jogo->jogador.posicao.x = larguraTela - LARGURA_JOGADOR;
 
     int alturaTela = TELA_ALTURA;
     //borda de cima
@@ -382,6 +405,8 @@ static void atualizar_explorando(Jogo *jogo)
     if(jogo->interativoProximo != -1 && IsKeyPressed(KEY_E)){
         jogo_interagir(jogo);
     }
+    if(IsKeyPressed(KEY_F3)) mostrarColisao = !mostrarColisao;
+    jogador_anim_atualizar(jogo->jogador.posicao, dt);
     if(IsKeyPressed(KEY_I)) {
         inventario_tela_abrir(&jogo->telaInventario, false);
         jogo->estado = INVENTARIO;
@@ -675,46 +700,92 @@ static void desenhar_relogio(const Jogo *jogo, int xDireita, int y)
     DrawText(relogio, xDireita - larguraRelogio, y, tamanhoRelogio, corRelogio);
 }
 
+/* NPC parado: folha 64x32 com 2 quadros de 32x32 alternando devagar.
+   'pes' é a caixa de colisão; o sprite (3x) fica centralizado com os pés nela. */
+static void desenhar_npc(Texture2D folha, Rectangle pes) {
+    if (folha.id == 0) { DrawRectangleRec(pes, MAROON); return; }
+    int quadro = ((int)(GetTime() * 2.0)) % 2;
+    float lado = 32.0f * ESCALA_MUNDO;
+    Rectangle origem  = { quadro * 32.0f, 0, 32, 32 };
+    Rectangle destino = { pes.x + pes.width / 2 - lado / 2, pes.y + pes.height - lado, lado, lado };
+    DrawTexturePro(folha, origem, destino, (Vector2){ 0, 0 }, 0, WHITE);
+}
+
+// Personagens que aparecem em cada sala (os pés coincidem com obstáculos de sala.c / jogo_abrir_porao)
+#define PES_MORDOMO ((Rectangle){ 704, 262, 32, 20 })
+#define PES_OTAVIO  ((Rectangle){ 900, 360, 32, 24 })
+
+static void desenhar_personagens(const Jogo *jogo) {
+    const Sala *sala = jogo->jogador.salaAtual;
+    Texture2D folha = { 0 };
+    Rectangle pes = { 0 };
+    if (sala == jogo->salas)                 { folha = spriteMordomo; pes = PES_MORDOMO; }
+    else if (jogo->poraoAberto && sala->fundo.id == 0) { folha = spriteOtavio; pes = PES_OTAVIO; }
+
+    // quem está mais "para baixo" na tela é desenhado por cima (profundidade)
+    float pesBruno = jogo->jogador.posicao.y + ALTURA_JOGADOR;
+    bool temNpc = pes.width > 0;
+    if (temNpc && pes.y + pes.height <= pesBruno) desenhar_npc(folha, pes);
+    jogador_anim_desenhar(jogo->jogador.posicao, LARGURA_JOGADOR, ALTURA_JOGADOR);
+    if (temNpc && pes.y + pes.height > pesBruno)  desenhar_npc(folha, pes);
+}
+
 static void desenhar_explorando(const Jogo *jogo)
 {
     int larguraTela = TELA_LARGURA;
-    int alturaTela = TELA_ALTURA;
-
-    // fundo com a cor da sala atual
-    DrawRectangle(0, 0, larguraTela, alturaTela, jogo->jogador.salaAtual->corFundo);
-
     const Sala *sala = jogo->jogador.salaAtual;
 
-    //obstaculo desenho: os NUM_PAREDES primeiros são as paredes; o resto, móveis
-    Color corParede = ColorBrightness(sala->corFundo, -0.55f);
-    for (int i = 0; i < sala->qtdObstaculos; i++) {
-        DrawRectangleRec(sala->obstaculos[i], i < NUM_PAREDES ? corParede : DARKGRAY);
+    if (sala->fundo.id != 0) {
+        // imagem 640x360 esticada para 1280x720 (2x, pixel art)
+        DrawTexturePro(sala->fundo,
+                       (Rectangle){ 0, 0, (float)sala->fundo.width, (float)sala->fundo.height },
+                       (Rectangle){ 0, 0, TELA_LARGURA, TELA_ALTURA }, (Vector2){ 0, 0 }, 0, WHITE);
+    } else {
+        // sala sem imagem (porão): cor de fundo, paredes e móveis em blocos
+        DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, sala->corFundo);
+        for (int i = 0; i < sala->qtdObstaculos; i++) {
+            DrawRectangleRec(sala->obstaculos[i], i < 6 ? ColorBrightness(sala->corFundo, -0.55f) : DARKGRAY);
+        }
+        DrawRectangleRec(sala->portaAnt.gatilho,  Fade(GOLD, 0.35f));
+        DrawRectangleRec(sala->portaProx.gatilho, Fade(GOLD, 0.35f));
     }
 
-    // portas: as aberturas nas paredes laterais
-    DrawRectangle(0, PORTA_Y, PAREDE_ESPESSURA, PORTA_ALTURA, Fade(GOLD, 0.35f));
-    DrawRectangle(larguraTela - PAREDE_ESPESSURA, PORTA_Y, PAREDE_ESPESSURA, PORTA_ALTURA, Fade(GOLD, 0.35f));
-
-    //interativo desenho
-    for(int i = 0; i < sala->qntdInterativo; i++){
-        DrawRectangleRec(sala->interativos[i].area, Fade(YELLOW, 0.85f));
+    if (mostrarColisao) {   // F3
+        for (int i = 0; i < sala->qtdObstaculos; i++) DrawRectangleLinesEx(sala->obstaculos[i], 2, RED);
+        for (int i = 0; i < sala->qntdInterativo; i++) DrawRectangleLinesEx(sala->interativos[i].area, 2, YELLOW);
+        DrawRectangleRec(sala->portaAnt.gatilho,  Fade(SKYBLUE, 0.6f));
+        DrawRectangleRec(sala->portaProx.gatilho, Fade(SKYBLUE, 0.6f));
+        DrawRectangleLines((int)jogo->jogador.posicao.x, (int)jogo->jogador.posicao.y, LARGURA_JOGADOR, ALTURA_JOGADOR, GREEN);
     }
 
-    // nome da sala no canto superior esquerdo (por cima da parede)
+    // destaca o objeto perto do Bruno
+    if (jogo->interativoProximo != -1) {
+        DrawRectangleLinesEx(sala->interativos[jogo->interativoProximo].area, 2, Fade(GOLD, 0.8f));
+    }
+
+    desenhar_personagens(jogo);
+
+    // nome da sala no canto superior esquerdo, numa faixa escura para ler sobre a arte
+    int larguraNome = MeasureText(sala->nome, 30);
+    DrawRectangle(24, 26, larguraNome + 32, 46, Fade(BLACK, 0.6f));
     DrawText(sala->nome, 40, 34, 30, WHITE);
 
-    
-    
-    // jogador (BRUNO)
-    DrawRectangle((int)jogo->jogador.posicao.x, (int)jogo->jogador.posicao.y, LARGURA_JOGADOR, ALTURA_JOGADOR, BLUE);
-    
-    //interativo aviso
+    //interativo aviso (acima da cabeça do Bruno, sem sair da tela)
     if (jogo->interativoProximo != -1 && jogo->estado == EXPLORANDO) {
-        const Interativo *obj =  &jogo->jogador.salaAtual->interativos[jogo->interativoProximo];
+        const Interativo *obj = &sala->interativos[jogo->interativoProximo];
         const char *aviso = TextFormat("[E] %s", obj->rotulo);
-        DrawText(aviso, (int)jogo->jogador.posicao.x, ((int)jogo->jogador.posicao.y - 25),  20, GOLD);
+        int largura = MeasureText(aviso, 20);
+        int x = (int)(jogo->jogador.posicao.x + LARGURA_JOGADOR / 2) - largura / 2;
+        int y = (int)jogo->jogador.posicao.y - 32 * ESCALA_MUNDO + ALTURA_JOGADOR - 28;
+        if (x < 8) x = 8;
+        if (x + largura > larguraTela - 8) x = larguraTela - 8 - largura;
+        if (y < 80) y = 80;
+        DrawRectangle(x - 8, y - 4, largura + 16, 28, Fade(BLACK, 0.65f));
+        DrawText(aviso, x, y, 20, GOLD);
     }
-    
+
+    int larguraRelogio = MeasureText("00:00", 40);
+    DrawRectangle(larguraTela - 40 - larguraRelogio - 16, 26, larguraRelogio + 32, 50, Fade(BLACK, 0.6f));
     desenhar_relogio(jogo, larguraTela - 40, 34);
 }
 
@@ -810,7 +881,7 @@ void jogo_abrir_porao(Jogo *jogo) {
         // caixas de contrabando e o culpado com o detonador
         sala_adicionar_obstaculo(porao, (Rectangle){ 300, 150, 90, 90 });
         sala_adicionar_obstaculo(porao, (Rectangle){ 700, 500, 90, 90 });
-        Rectangle otavio = { 900, 336, 32, 48 };
+        Rectangle otavio = { 900, 360, 32, 24 };   // pés do Otávio (sprite desenhado em jogo.c)
         sala_adicionar_obstaculo(porao, otavio);
         sala_adicionar_interativo(porao, OBJ_OTAVIO, otavio, "Confrontar Otávio");
         jogo->poraoAberto = true;

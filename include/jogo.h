@@ -5,10 +5,11 @@
 #include "tela.h"
 #include "final.h"   // já inclui ui.h, inventario_tela.h e jogador.h
 #include "puzzles.h"
-#define VELOCIDADE_JOGADOR 250.0f
+#define ESCALA_MUNDO 3                               // sprites de 32x32 desenhados 3x maiores
+#define VELOCIDADE_JOGADOR (120.0f * ESCALA_MUNDO)
 #define TEMPO_TOTAL 600.0f
-#define LARGURA_JOGADOR 32
-#define ALTURA_JOGADOR  48
+#define LARGURA_JOGADOR (12 * ESCALA_MUNDO)   // hitbox só dos pés: o sprite é desenhado por cima
+#define ALTURA_JOGADOR  (8 * ESCALA_MUNDO)
 
 typedef enum {
     MENU, 
