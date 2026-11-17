@@ -17,7 +17,7 @@ typedef enum { RESULTADO_NENHUM, RESULTADO_MUITO_BOM, RESULTADO_BOM,RESULTADO_ME
 extern const int PROVAS[NUM_PROVAS];       // horários das pistas que provam a culpa 
 extern const int ORDEM_FIOS[NUM_FIOS];     // horários na ordem de corte 
 
-/* ---------- Acusação ---------- */
+//Acusação 
 typedef enum { ACUS_ESCOLHER_SUSPEITO, ACUS_MARCAR_PISTAS, ACUS_CONCLUIDA } EtapaAcusacao;
 
 typedef struct {
@@ -33,7 +33,7 @@ bool acusacao_atualizar(Acusacao *a, Inventario *inv);   /* true quando terminou
 void acusacao_desenhar(const Acusacao *a, const Inventario *inv);
 bool acusacao_verificar(int suspeito, const Inventario *inv);
 
-/* ---------- Fios da bomba ---------- */
+//Fios da bomba
 typedef struct {
     const char *rotulo;
     int   horario;      /* a ordem de corte segue o horário desta pista */
@@ -53,7 +53,7 @@ void bomba_iniciar(Bomba *b);
 bool bomba_atualizar(Bomba *b);   /* true quando desarmou ou explodiu */
 void bomba_desenhar(const Bomba *b);
 
-/* ---------- Finais ---------- */
+//Finais 
 ResultadoFinal final_decidir(bool capturouNoPorao, bool acusouCerto, bool desarmou, bool deuMeiaNoite);
 void final_desenhar(ResultadoFinal f);
 

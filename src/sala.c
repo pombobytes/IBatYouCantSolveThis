@@ -112,8 +112,8 @@ static void montar_jardim(Sala *s) {
 
     Rectangle fonte = { 505, 320, 295, 245 };
     sala_adicionar_obstaculo(s, fonte);
-    sala_adicionar_obstaculo(s, (Rectangle){ 458, 345, 47, 160 });    // flores ao lado da fonte
-    sala_adicionar_obstaculo(s, (Rectangle){ 800, 345, 47, 160 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 438, 345, 37, 150 });    // flores ao lado da fonte
+    sala_adicionar_obstaculo(s, (Rectangle){ 790, 345, 37, 150 });
     sala_adicionar_obstaculo(s, (Rectangle){ 262, 255, 140, 60 });   // mesas: só a base
     sala_adicionar_obstaculo(s, (Rectangle){ 880, 255, 130, 65 });
     sala_adicionar_obstaculo(s, (Rectangle){ 950, 555, 120, 70 });

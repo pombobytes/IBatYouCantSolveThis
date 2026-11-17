@@ -9,7 +9,7 @@ typedef enum { PZ_RODANDO, PZ_ACERTOU, PZ_ERROU, PZ_SAIU } ResultadoPuzzle;
 /* Qual puzzle está aberto no estado PUZZLE */
 typedef enum { PUZZLE_NENHUM, PUZZLE_JARDIM, PUZZLE_GALERIA } PuzzleId;
 
-/* ================= JARDIM: quem está mentindo? =================
+/* JARDIM: quem está mentindo?
    Os depoimentos dos 4 garçons são uma FILA de falas (Dialogo do ui.h);
    depois o jogador escolhe o mentiroso (Escolha do ui.h).
    Exatamente um mente: Edu.                                         */
@@ -25,7 +25,7 @@ void            jardim_iniciar(PuzzleJardim *p);
 ResultadoPuzzle jardim_atualizar(PuzzleJardim *p);
 void            jardim_desenhar(const PuzzleJardim *p);
 
-/* ================= GALERIA: quadros do leilão (insertion sort) =================
+/* GALERIA: quadros do leilão (insertion sort) 
    Os quadros estão fora de ordem num vetor. O jogador PEGA um quadro e o
    INSERE em outra posição; os outros deslizam para abrir espaço — exatamente
    o passo do insertion sort (quadros_mover). O jogo confere a resposta
