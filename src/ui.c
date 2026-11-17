@@ -3,7 +3,7 @@
 #include "tela.h"
 #include "ui.h"
 
-/* Quebra o texto em linhas que cabem na largura e desenha. */
+// Quebra o texto em linhas que cabem na largura e desenha. 
 static void desenhar_texto_quebrado(const char *texto, int x, int y, int largura, int tam, Color cor) {
     char linha[256] = "";
     char palavra[64];
@@ -32,7 +32,7 @@ static void desenhar_texto_quebrado(const char *texto, int x, int y, int largura
     if (linha[0]) DrawText(linha, x, yAtual, tam, cor);
 }
 
-/* ================= DIALOGO (fila) ================= */
+// DIALOGO (fila) 
 
 void dialogo_abrir(Dialogo *d, const char *quemFala, const char *falas[], int n) {
     if (n > MAX_FALAS) n = MAX_FALAS;
@@ -68,7 +68,7 @@ void dialogo_desenhar(const Dialogo *d) {
     DrawText("E >", caixa.x + caixa.width - 50, caixa.y + caixa.height - 28, 18, LIGHTGRAY);
 }
 
-/* ================= ESCOLHA ENTRE N OPCOES ================= */
+//ESCOLHA ENTRE N OPCOES
 
 void escolha_abrir(Escolha *e, const char *titulo, const char *opcoes[], int n) {
     if (n > MAX_OPCOES) n = MAX_OPCOES;
@@ -109,7 +109,7 @@ void escolha_desenhar(const Escolha *e) {
     }
 }
 
-/* ================= AVISO ================= */
+// AVISO 
 
 static char  avisoTexto[64] = "";
 static float avisoTempo = 0;

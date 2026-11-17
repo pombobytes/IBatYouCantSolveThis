@@ -5,12 +5,12 @@
 
 #define QTD(v) ((int)(sizeof(v) / sizeof((v)[0])))
 
-/* =====================================================================
+/* 
    JARDIM: quem está mentindo?
    Lógica: se o Davi mentisse, o Fábio ("tudo o que o Davi disse é
    verdade") também mentiria -> seriam dois mentirosos. Então o Davi e o
    Fábio dizem a verdade, e quem mente é o Edu (que acusa o Davi).
-   ===================================================================== */
+ */
 
 #define MENTIROSO 2   // índice do Edu nas opções
 
@@ -49,9 +49,8 @@ void jardim_desenhar(const PuzzleJardim *p) {
     else                                escolha_desenhar(&p->escolha);
 }
 
-/* =====================================================================
-   GALERIA: quadros do leilão (insertion sort)
-   ===================================================================== */
+
+//GALERIA: quadros do leilão (insertion sort)
 
 /* Ordem inicial embaralhada de propósito. O mais antigo (1847) é o ano
    usado nos ladrilhos da fonte que abre o porão. */
@@ -93,7 +92,7 @@ void quadros_mover(Quadro v[], int n, int de, int para) {
     v[para] = pego;
 }
 
-/* Confere a ordem do jogador comparando com uma cópia ordenada por insertion sort */
+// Confere a ordem do jogador comparando com uma cópia ordenada por insertion sort 
 bool quadros_em_ordem(const Quadro v[], int n) {
     Quadro gabarito[NUM_QUADROS];
     if (n > NUM_QUADROS) n = NUM_QUADROS;
@@ -140,9 +139,7 @@ void galeria_desenhar(const PuzzleGaleria *p) {
     DrawText("OS QUADROS DO LEILÃO", 60, 80, 32, GOLD);
     DrawText("Coloque os quadros em ordem cronológica (do mais antigo ao mais novo).",
              60, 125, 20, LIGHTGRAY);
-    DrawText(p->pego < 0 ? "Setas: escolher   ENTER: pegar quadro   ESC: sair"
-                         : "Setas: escolher onde inserir   ENTER: inserir aqui   ESC: largar",
-             60, 155, 18, GRAY);
+    DrawText(p->pego < 0 ? "Setas: escolher   ENTER: pegar quadro   ESC: sair": "Setas: escolher onde inserir   ENTER: inserir aqui   ESC: largar",60, 155, 18, GRAY);
 
     const int larg = 170, alt = 220, espaco = 25;
     const int total = NUM_QUADROS * larg + (NUM_QUADROS - 1) * espaco;
@@ -151,7 +148,7 @@ void galeria_desenhar(const PuzzleGaleria *p) {
     for (int i = 0; i < NUM_QUADROS; i++) {
         const Quadro *q = &p->quadros[i];
         int x = x0 + i * (larg + espaco);
-        int y = y0 - (i == p->pego ? 30 : 0);      // o quadro pego fica "levantado"
+        int y = y0 - (i == p->pego ? 30 : 0); // o quadro pego fica "levantado"
 
         Color moldura = BROWN;
         if (p->destacarAntigo && q->ano == 1847) moldura = GOLD;   // dica do garçom
@@ -159,7 +156,7 @@ void galeria_desenhar(const PuzzleGaleria *p) {
 
         DrawRectangle(x, y, larg, alt, moldura);
         DrawRectangle(x + 10, y + 10, larg - 20, alt - 60, (Color){ 40, 40, 55, 255 });
-        int tam = 16;                                  // diminui a fonte se o título não couber
+        int tam = 16;   // diminui a fonte se o título não couber
         while (tam > 10 && MeasureText(q->titulo, tam) > larg - 12) tam--;
         int lt = MeasureText(q->titulo, tam);
         DrawText(q->titulo, x + (larg - lt) / 2, y + alt - 42, tam, BLACK);

@@ -64,7 +64,7 @@ Sala *salas_criar(void) {
     galeria->antSala = jardim;
     galeria->proxSala = salao;
 
-    /* ----- Salão de Festas: bilhete, charada e o relógio da bomba ----- */
+    //Salão de Festas: bilhete, charada e o relógio da bomba 
     Rectangle mesa    = { 480, 170, 240, 90 };
     Rectangle piano   = { 1020, 110, 170, 100 };
     Rectangle relogio = { 90, 60, 50, 90 };
@@ -78,7 +78,7 @@ Sala *salas_criar(void) {
     sala_adicionar_interativo(salao, OBJ_CARDAPIO, (Rectangle){ 880, 560, 32, 24 }, "Ler o cardápio");
     sala_adicionar_interativo(salao, OBJ_REPERTORIO, (Rectangle){ 160, 610, 32, 24 }, "Ler o repertório da banda");
 
-    /* ----- Jardim de Inverno: garçons e a fonte ----- */
+    //Jardim de Inverno: garçons e a fonte 
     Rectangle fonte   = { 560, 250, 160, 160 };
     Rectangle garcons = { 260, 110, 120, 60 };
     sala_adicionar_obstaculo(jardim, fonte);
@@ -87,7 +87,7 @@ Sala *salas_criar(void) {
     sala_adicionar_interativo(jardim, OBJ_GARCONS, garcons, "Conversar com os garçons");
     sala_adicionar_interativo(jardim, OBJ_FONTE, fonte, "Examinar a fonte");
 
-    /* ----- Galeria de Arte: os quadros do leilão ----- */
+    // Galeria de Arte: os quadros do leilão 
     sala_adicionar_obstaculo(galeria, (Rectangle){ 560, 420, 160, 50 });  // banco
     sala_adicionar_interativo(galeria, OBJ_QUADROS, (Rectangle){ 340, 30, 600, 30 }, "Examinar os quadros do leilão");
 

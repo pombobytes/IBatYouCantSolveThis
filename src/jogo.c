@@ -11,7 +11,7 @@ static const char *controles = "WASD/Setas: andar   E: interagir   I: linha do t
 static const int tamanhoFonte = 40;
 static const int tamanhoFonteSub = 20;
 
-/* Posição inicial do Bruno no salão (longe da mesa e das portas) */
+// Posição inicial do Bruno no salão (longe da mesa e das portas) 
 #define SPAWN_X 624.0f
 #define SPAWN_Y 470.0f
 
@@ -49,7 +49,7 @@ static void jogo_terminar(Jogo *jogo, ResultadoFinal resultado) {
     jogo->estado = FIM;
 }
 
-/* ---------------- auxiliares usados pelas interações ---------------- */
+//auxiliares usados pelas interações 
 
 // Abre uma sequência de falas (fila do ui.h) e vai para o estado DIALOGO
 static void abrir_dialogo(Jogo *jogo, const char *quem, const char *falas[], int n) {
@@ -140,7 +140,7 @@ static void interagir_piano(Jogo *jogo) {
     jogo->salaoResolvido = true;
 }
 
-/* ---------------- Jardim: garçons (puzzle) e a fonte (porão) ---------------- */
+//Jardim: garçons (puzzle) e a fonte (porão)
 static void interagir_garcons(Jogo *jogo) {
     if (jogo->jardimResolvido) {
         static const char *falas[] = { "Os garçons já me disseram tudo o que sabiam." };
@@ -180,7 +180,7 @@ static void interagir_fonte(Jogo *jogo) {
     abrir_dialogo(jogo, "Bruno", falas, QTD(falas));
 }
 
-/* ---------------- Galeria: os quadros do leilão (puzzle) ---------------- */
+// Galeria: os quadros do leilão (puzzle) 
 static void interagir_quadros(Jogo *jogo) {
     if (jogo->galeriaResolvida) {
         static const char *falas[] = { "Os quadros já estão em ordem. A moldura do mais antigo continua aberta." };
@@ -197,7 +197,7 @@ static void interagir_quadros(Jogo *jogo) {
     jogo->estado = PUZZLE;
 }
 
-/* ---------------- Porão: confronto com Otávio (final muito bom) ---------------- */
+//Porão: confronto com Otávio (final muito bom) 
 static void interagir_otavio(Jogo *jogo) {
     static const char *falas[] = {
         "Otávio: Bruno?! Como você achou este lugar?",
@@ -344,7 +344,7 @@ static void atualizar_dialogo(Jogo *jogo) {
     }
 }
 
-/* Puzzles do jardim e da galeria (estado PUZZLE) */
+// Puzzles do jardim e da galeria (estado PUZZLE) 
 static void atualizar_puzzle(Jogo *jogo) {
     if (jogo->puzzleAtual == PUZZLE_JARDIM) {
         ResultadoPuzzle r = jardim_atualizar(&jogo->puzzleJardim);
@@ -429,8 +429,7 @@ static void atualizar_bomba(Jogo *jogo) {
         return;
     }
     if (bomba_atualizar(&jogo->bomba)) {
-        ResultadoFinal r = final_decidir(jogo->capturouNoPorao, jogo->acusouCerto,
-                                         jogo->bomba.desarmada, false);
+        ResultadoFinal r = final_decidir(jogo->capturouNoPorao, jogo->acusouCerto,jogo->bomba.desarmada, false);
         jogo_terminar(jogo, r);
     }
 }
@@ -504,7 +503,7 @@ static void desenhar_menu(const Jogo *jogo)
     DrawText(controles, (larguraTela - larguraControles) / 2, alturaTela - 60, 18, DARKGRAY);
 }
 
-/* Relógio da bomba (23:00 -> 00:00), alinhado pela direita em xDireita */
+// Relógio da bomba (23:00 -> 00:00), alinhado pela direita em xDireita 
 static void desenhar_relogio(const Jogo *jogo, int xDireita, int y)
 {
     float tempoPassado = TEMPO_TOTAL - jogo->tempoRestante;
