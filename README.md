@@ -53,6 +53,7 @@ Para apagar o executável: `make clean` (ou `mingw32-make clean`).
 | **P** | pausar (o relógio para) |
 | **M** | música liga/desliga |
 | **F11** | tela cheia |
+| **F10** | sair|
 
 O menu também funciona com o mouse.
 
