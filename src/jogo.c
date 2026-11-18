@@ -1,8 +1,8 @@
+
 #include <stdlib.h>
 #include "jogo.h"
 #include "jogador_anim.h"
 
-#define DISTANCIA_INTERACAO 20
 #define DISTANCIA_INTERACAO (10 * ESCALA_MUNDO)
 
 static const char *titulo = "I Bat You Can't Solve It";
@@ -14,6 +14,7 @@ static const int tamanhoFonteSub = 20;
 void jogo_iniciar(Jogo *jogo)
 {
     jogo->estado = MENU;
+    jogo->estadoAnterior = MENU;
     jogo->tempoRestante = TEMPO_TOTAL;
     jogo->posicaoJogador.x = GetScreenWidth() / 2.0f;
     jogo->posicaoJogador.y = GetScreenHeight() / 2.0f;
@@ -22,6 +23,10 @@ void jogo_iniciar(Jogo *jogo)
     jogo->interativoProximo = -1;
     jogo->textoDialogo = NULL;
     jogo->poraoAberto = false;
+    jogo->mudo = false;
+
+    // [AUDIO] abre o dispositivo de som (pode falhar em alguns WSL; o resto do jogo segue)
+    InitAudioDevice();
 
     // [ANIMACAO] carrega a folha de sprites (a janela ja foi aberta no main.c)
     jogador_anim_iniciar(jogo->posicaoJogador);
@@ -143,10 +148,8 @@ static void atualizar_explorando(Jogo *jogo)
         jogo_interagir(jogo);
     }
 
-    //teste para abrir o Porão
-    // if(IsKeyPressed(KEY_P)){
-    //     jogo_abrir_porao(jogo);
-    // }
+    // (a antiga tecla P de teste do porão foi removida: P agora é a pausa)
+    // para testar o porão, chame jogo_abrir_porao(jogo) temporariamente de outro lugar
 }
 
 static void atualizar_dialogo(Jogo *jogo) {
@@ -166,8 +169,40 @@ static void atualizar_tempo(Jogo *jogo) {
     }
 }
 
+//pausa e mudo
+// só dá para pausar durante a partida (não no menu nem nos finais)
+static bool pode_pausar(EstadoJogo estado) {
+    return estado == EXPLORANDO || estado == DIALOGO || estado == PUZZLE ||
+           estado == INVENTARIO || estado == FURTIVIDADE;
+}
+
+void jogo_alternar_pausa(Jogo *jogo) {
+    if (jogo->estado == PAUSADO) {
+        jogo->estado = jogo->estadoAnterior;     // retoma exatamente de onde parou
+    } else if (pode_pausar(jogo->estado)) {
+        jogo->estadoAnterior = jogo->estado;
+        jogo->estado = PAUSADO;
+    }
+}
+
+void jogo_alternar_mudo(Jogo *jogo) {
+    jogo->mudo = !jogo->mudo;
+    if (IsAudioDeviceReady()) {
+        SetMasterVolume(jogo->mudo ? 0.0f : 1.0f);
+    }
+}
+
 void jogo_atualizar(Jogo *jogo)
 {
+    // teclas que valem em qualquer estado (antes do tempo, para a pausa já congelar este frame)
+    if (IsKeyPressed(KEY_P)) {
+        jogo_alternar_pausa(jogo);
+    }
+    if (IsKeyPressed(KEY_M)) {
+        jogo_alternar_mudo(jogo);
+    }
+
+    // PAUSADO não está na lista: o relógio da bomba para
     if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE || jogo->estado == INVENTARIO) {
         atualizar_tempo(jogo);
     }    
@@ -182,6 +217,8 @@ void jogo_atualizar(Jogo *jogo)
     case DIALOGO:
         atualizar_dialogo(jogo);
         break;
+    case PAUSADO:
+        break;   // nada acontece enquanto pausado
     default:
         break;
     }
@@ -289,6 +326,28 @@ static void desenhar_dialogo(const Jogo *jogo) {
     DrawText(continuar, ((int)(caixa.x + caixa.width) - larguraContinuar - 20), ((int)(caixa.y + caixa.height) - 18 - 15), 18, GRAY);
 }
 
+static void desenhar_pausado(const Jogo *jogo) {
+    // a cena congelada continua aparecendo por trás
+    if (jogo->estadoAnterior == DIALOGO) {
+        desenhar_dialogo(jogo);
+    } else {
+        desenhar_explorando(jogo);
+    }
+
+    int larguraTela = GetScreenWidth();
+    int alturaTela  = GetScreenHeight();
+
+    DrawRectangle(0, 0, larguraTela, alturaTela, (Color){ 0, 0, 0, 160 });
+
+    const char *texto = "PAUSADO";
+    int tamanho = 60;
+    DrawText(texto, (larguraTela - MeasureText(texto, tamanho)) / 2, alturaTela / 2 - tamanho, tamanho, WHITE);
+
+    const char *dica = "[P] continuar    [M] mudo";
+    int tamanhoDica = 22;
+    DrawText(dica, (larguraTela - MeasureText(dica, tamanhoDica)) / 2, alturaTela / 2 + 20, tamanhoDica, LIGHTGRAY);
+}
+
 
 void jogo_desenhar(const Jogo *jogo)
 {
@@ -303,8 +362,16 @@ void jogo_desenhar(const Jogo *jogo)
     case DIALOGO:
         desenhar_dialogo(jogo);
         break;
+    case PAUSADO:
+        desenhar_pausado(jogo);
+        break;
     default:
         break;
+    }
+
+    // indicador de som desligado, visível em qualquer estado
+    if (jogo->mudo) {
+        DrawText("MUDO [M]", 20, 60, 20, GRAY);
     }
 }
 
@@ -314,6 +381,9 @@ void jogo_finalizar(Jogo *jogo)
     salas_liberar(jogo->salas);
     jogo->salas = NULL;
     jogo->salaAtual = NULL;
+    if (IsAudioDeviceReady()) {
+        CloseAudioDevice();     // [AUDIO]
+    }
 }
 
 void jogo_penalizar(Jogo *jogo, int minutosJogo) {
