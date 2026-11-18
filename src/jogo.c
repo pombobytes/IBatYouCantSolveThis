@@ -71,6 +71,7 @@ static const char *ROTULOS_MENU[QTD_OPCOES_MENU] = { "COMEÇAR", "CONTROLES", "C
 void jogo_iniciar(Jogo *jogo)
 {
     jogo->estado = MENU;
+    jogo->estadoAnterior = MENU;
     jogo->telaMenu = TELA_MENU_PRINCIPAL;
     jogo->opcaoMenu = 0;
     jogo->tempoRestante = TEMPO_TOTAL;
@@ -543,8 +544,31 @@ static void atualizar_fim(Jogo *jogo) {
     }
 }
 
+/* ---------------- pausa (tecla P) ----------------
+   Só pausa durante a partida (não no menu nem na tela de final).
+   O estado anterior é guardado para voltar exatamente de onde parou. */
+static bool pode_pausar(EstadoJogo estado) {
+    return estado == EXPLORANDO || estado == DIALOGO || estado == PUZZLE ||
+           estado == INVENTARIO || estado == ACUSACAO || estado == BOMBA;
+}
+
+static void alternar_pausa(Jogo *jogo) {
+    if (jogo->estado == PAUSADO) {
+        jogo->estado = jogo->estadoAnterior;
+    } else if (pode_pausar(jogo->estado)) {
+        jogo->estadoAnterior = jogo->estado;
+        jogo->estado = PAUSADO;
+    }
+}
+
 void jogo_atualizar(Jogo *jogo)
 {
+    // P vale em qualquer estado e vem antes do relógio, para a pausa já congelar este frame
+    if (IsKeyPressed(KEY_P)) {
+        alternar_pausa(jogo);
+    }
+    if (jogo->estado == PAUSADO) return;   // nada anda enquanto pausado
+
     aviso_atualizar(GetFrameTime());
     if (jogo->estado == EXPLORANDO || jogo->estado == DIALOGO || jogo->estado == PUZZLE ||
         jogo->estado == INVENTARIO || jogo->estado == ACUSACAO || jogo->estado == BOMBA) {
@@ -605,6 +629,7 @@ static void desenhar_menu_controles(void)
         { "ESPAÇO",       "marcar pista na acusação" },
         { "ENTER",        "confirmar" },
         { "ESC",          "fechar telas" },
+        { "P",            "pausar" },
         { "F11",          "tela cheia" },
     };
     int y = (int)p.y + 110;
@@ -879,9 +904,9 @@ static void desenhar_fim(const Jogo *jogo) {
     final_desenhar(jogo->resultado);
 }
 
-void jogo_desenhar(const Jogo *jogo)
+static void desenhar_estado(const Jogo *jogo, EstadoJogo estado)
 {
-    switch (jogo->estado)
+    switch (estado)
     {
     case MENU:
         desenhar_menu(jogo);
@@ -910,7 +935,27 @@ void jogo_desenhar(const Jogo *jogo)
     default:
         break;
     }
-    aviso_desenhar();
+}
+
+static void desenhar_pausado(const Jogo *jogo)
+{
+    desenhar_estado(jogo, jogo->estadoAnterior);   // a cena congelada continua por trás
+    DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, Fade(BLACK, 0.65f));
+
+    const char *texto = "PAUSADO";
+    DrawText(texto, (TELA_LARGURA - MeasureText(texto, 60)) / 2, TELA_ALTURA / 2 - 60, 60, WHITE);
+    const char *dica = "[P] continuar";
+    DrawText(dica, (TELA_LARGURA - MeasureText(dica, 22)) / 2, TELA_ALTURA / 2 + 20, 22, LIGHTGRAY);
+}
+
+void jogo_desenhar(const Jogo *jogo)
+{
+    if (jogo->estado == PAUSADO) {
+        desenhar_pausado(jogo);
+    } else {
+        desenhar_estado(jogo, jogo->estado);
+        aviso_desenhar();
+    }
 }
 
 void jogo_finalizar(Jogo *jogo)

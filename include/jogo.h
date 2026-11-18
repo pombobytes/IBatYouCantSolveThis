@@ -20,7 +20,8 @@ typedef enum {
     ACUSACAO,      // escolher o suspeito e marcar as provas (final.h)
     BOMBA,         // cortar os fios na ordem da linha do tempo (final.h)
     FURTIVIDADE,
-    FIM            // tela de final; qual final está em jogo->resultado
+    FIM,           // tela de final; qual final está em jogo->resultado
+    PAUSADO        // tecla P: o relógio da bomba para (ideia da Leticia)
 } EstadoJogo;
 
 /* Telas dentro do estado MENU */
@@ -28,6 +29,7 @@ typedef enum { TELA_MENU_PRINCIPAL, TELA_MENU_CONTROLES, TELA_MENU_CREDITOS } Te
 
 typedef struct {
     EstadoJogo estado;
+    EstadoJogo estadoAnterior;   // estado em que o jogo estava antes de pausar
     TelaMenu telaMenu;       // principal, controles ou créditos
     int opcaoMenu;           // botão selecionado: 0 começar, 1 controles, 2 créditos
     float tempoRestante;
