@@ -24,7 +24,7 @@ static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para aj
 static Music musica;               // trilha de fundo em loop (assets/musica.ogg)
 static bool musicaOk = false;      // false se não houver som: o jogo segue mudo
 static bool musicaMuda = false;    // tecla M
-#define VOLUME_MUSICA 0.5f
+#define VOLUME_MUSICA 0.01f
 
 static Texture2D carregar_pixel_art(const char *caminho) {
     Texture2D t = LoadTexture(caminho);
