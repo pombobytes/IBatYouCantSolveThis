@@ -133,6 +133,6 @@ A tecla **F3** mostra as caixas de colisão. Ela foi usada para alinhar os obst�
 | **Matheus Costa da Rocha** | núcleo do jogo (salas, movimento, colisão, estados), puzzles, integração das partes, menu e resolução Full HD |
 | **Luis Filipe Alves Silva Santos** | inventário, telas genéricas (diálogo, escolha, avisos), linha do tempo, acusação, fios da bomba e finais |
 | **Amanda Campos Lima** | sprites, cenários e animação do personagem |
-| **Leticia Camello Barros** | pausa e controle de som |
+| **Leticia Camello Barros** | pausa ,inventario ,struct do personagem , controle de som  e correcao de bugs|
 
 **Trilha sonora:** *The Midnight Alibi*.
