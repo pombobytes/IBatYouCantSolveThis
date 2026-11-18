@@ -169,9 +169,9 @@ void sala_montar_porao(Sala *s) {
     sala_adicionar_obstaculo(s, (Rectangle){ 0, 0, 55, 720 });         // parede esquerda
     sala_adicionar_obstaculo(s, (Rectangle){ 1228, 0, 52, 720 });      // parede direita
     sala_adicionar_obstaculo(s, (Rectangle){ 55, 0, 120, 200 });       // topo da escada
-    sala_adicionar_obstaculo(s, (Rectangle){ 175, 0, 40, 300 });       // parede ao lado da escada
+    sala_adicionar_obstaculo(s, (Rectangle){ 175, 0, 40, 255 });       // parede ao lado da escada
     sala_adicionar_obstaculo(s, (Rectangle){ 215, 0, 1013, 248 });     // estante, mesa, armário e lençóis de cima
-    sala_adicionar_obstaculo(s, (Rectangle){ 945, 248, 50, 12 });      // caixotes de cima
+    sala_adicionar_obstaculo(s, (Rectangle){ 222, 300, 70, 140 });      // caixotes de cima
     sala_adicionar_obstaculo(s, (Rectangle){ 1160, 285, 60, 60 });     // vaso da direita
     sala_adicionar_obstaculo(s, (Rectangle){ 220, 290, 75, 150 });     // caixotes da esquerda
     sala_adicionar_obstaculo(s, (Rectangle){ 55, 345, 160, 295 });     // lençol, barril e caixotes da esquerda
