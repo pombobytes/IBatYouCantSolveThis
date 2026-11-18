@@ -24,7 +24,7 @@ static float     tempo = 0;
 static bool      espelhar = false;
 
 void jogador_anim_iniciar(Vector2 posicao) {
-    folha = LoadTexture("assets/Placeholder.png");
+    folha = LoadTexture("assets/jogador.png");
     SetTextureFilter(folha, TEXTURE_FILTER_POINT);
     ultimaPosicao = posicao;
 }
