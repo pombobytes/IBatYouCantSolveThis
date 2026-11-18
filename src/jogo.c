@@ -8,7 +8,7 @@
 
 static const char *titulo = "I Bat You Can't Solve It";
 static const char *subtitulo = "Pressione ENTER para começar";
-static const char *controles = "WASD/Setas: andar   E: interagir   I: linha do tempo   F11: tela cheia";
+static const char *controles = "WASD/Setas: andar   E: interagir   I: linha do tempo   F11: tela cheia  F10: sair";
 static const int tamanhoFonte = 40;
 static const int tamanhoFonteSub = 20;
 
@@ -660,6 +660,7 @@ static void desenhar_menu_controles(void)
         { "P",            "pausar" },
         { "M",            "música liga/desliga" },
         { "F11",          "tela cheia" },
+        { "F10",          "sair" },
     };
     int y = (int)p.y + 110;
     for (int i = 0; i < QTD(teclas); i++, y += 38) {

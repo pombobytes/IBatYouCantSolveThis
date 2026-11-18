@@ -4,7 +4,7 @@
 
 int main(void) {
     InitWindow(TELA_LARGURA, TELA_ALTURA, "I Bat You Can't Solve It");
-    SetExitKey(KEY_NULL);
+    SetExitKey(KEY_F10);
     SetWindowPosition(100, 100);
     ToggleBorderlessWindowed();
     SetTargetFPS(60);
