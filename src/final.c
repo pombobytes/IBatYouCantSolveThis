@@ -86,7 +86,19 @@ bool bomba_atualizar(Bomba *b) {
     if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) b->selecionado = (b->selecionado + 1) % NUM_FIOS;
     if (IsKeyPressed(KEY_LEFT)  || IsKeyPressed(KEY_A)) b->selecionado = (b->selecionado - 1 + NUM_FIOS) % NUM_FIOS;
 
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_E)) {
+    // mouse: passar por cima seleciona o fio; clicar corta (mesmas posições de bomba_desenhar)
+    bool clicou = false;
+    int espaco = (TELA_LARGURA - 80) / NUM_FIOS;
+    for (int i = 0; i < NUM_FIOS; i++) {
+        int x = 40 + i * espaco + espaco / 2;
+        Rectangle area = { x - 50, 130, 100, 280 };
+        if (CheckCollisionPointRec(GetMousePosition(), area) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            b->selecionado = i;
+            clicou = true;
+        }
+    }
+
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_E) || clicou) {
         Fio *f = &b->fios[b->selecionado];
         if (f->cortado) return false;
 
@@ -106,7 +118,7 @@ bool bomba_atualizar(Bomba *b) {
 void bomba_desenhar(const Bomba *b) {
     int w = TELA_LARGURA;
     DrawText("DESARME A BOMBA", 40, 40, 28, RED);
-    DrawText("Corte os fios na ordem da linha do tempo.  Setas: escolher  ENTER: cortar  I: ver pistas",
+    DrawText("Corte os fios na ordem da linha do tempo.  Setas: escolher  ENTER ou clique: cortar  I: ver pistas",
              40, 80, 16, LIGHTGRAY);
     DrawText(TextFormat("Erros: %d/%d", b->erros, ERROS_MAX), w - 160, 40, 22, b->erros ? RED : WHITE);
 
