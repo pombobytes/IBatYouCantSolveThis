@@ -22,7 +22,7 @@ static Texture2D spriteGarcom2;    // garcom2.png (outro garçom, cores diferent
 static Texture2D spriteConvidado[3]; // convidado1..3.png: convidados sentados nas mesas
 static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para ajustar o mapa)
 static Music musica;               // trilha de fundo em loop (assets/musica.ogg)
-static bool musicaOk = false;      // false se não houver som (ex.: WSL sem áudio): o jogo segue mudo
+static bool musicaOk = false;      // false se não houver som: o jogo segue mudo
 static bool musicaMuda = false;    // tecla M
 #define VOLUME_MUSICA 0.5f
 
@@ -54,6 +54,7 @@ void jogo_carregar_recursos(void) {
             PlayMusicStream(musica);
         }
     }
+
 }
 
 void jogo_liberar_recursos(void) {
@@ -581,7 +582,7 @@ static void alternar_pausa(Jogo *jogo) {
 
 void jogo_atualizar(Jogo *jogo)
 {
-    // música: precisa ser alimentada todo frame; M liga/desliga (ideia da Leticia)
+    // música: precisa ser alimentada todo frame; M liga/desliga
     if (musicaOk) {
         UpdateMusicStream(musica);
         if (IsKeyPressed(KEY_M)) {
