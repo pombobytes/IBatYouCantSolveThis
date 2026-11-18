@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "tela.h"
 #include "final.h"
 
 const int PROVAS[NUM_PROVAS]   = { HORARIO(22,20), HORARIO(22,40), HORARIO(22,50) };
@@ -58,7 +59,7 @@ void acusacao_desenhar(const Acusacao *a, const Inventario *inv) {
     else if (a->etapa == ACUS_MARCAR_PISTAS) {
         inventario_tela_desenhar(&a->tela, inv);
         DrawText(TextFormat("Acusando: %s - marque as %d provas", NOMES_SUSPEITOS[a->suspeito], NUM_PROVAS),
-                 40, GetScreenHeight() - 70, 18, WHITE);
+                 40, TELA_ALTURA - 70, 18, WHITE);
     }
 }
 
@@ -103,7 +104,7 @@ bool bomba_atualizar(Bomba *b) {
 }
 
 void bomba_desenhar(const Bomba *b) {
-    int w = GetScreenWidth();
+    int w = TELA_LARGURA;
     DrawText("DESARME A BOMBA", 40, 40, 28, RED);
     DrawText("Corte os fios na ordem da linha do tempo.  Setas: escolher  ENTER: cortar  I: ver pistas",
              40, 80, 16, LIGHTGRAY);
@@ -155,7 +156,7 @@ void final_desenhar(ResultadoFinal f) {
         cor = RED; break;
     default: return;
     }
-    int w = GetScreenWidth(), h = GetScreenHeight();
+    int w = TELA_LARGURA, h = TELA_ALTURA;
     ClearBackground(BLACK);
     DrawText(titulo, w / 2 - MeasureText(titulo, 40) / 2, h / 2 - 60, 40, cor);
     DrawText(texto,  w / 2 - MeasureText(texto, 20) / 2, h / 2, 20, WHITE);

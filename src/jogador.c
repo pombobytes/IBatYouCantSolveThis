@@ -2,8 +2,7 @@
 #include <string.h>
 #include "jogador.h"
 
-
-/* ================= JOGADOR ================= */
+//JOGADOR 
 
 void jogador_iniciar(Jogador *j, Sala *salaInicial, Vector2 posicao) {
     j->posicao = posicao;
@@ -20,7 +19,7 @@ bool jogador_coletar_fala(Jogador *j, const char *texto, int horario) {
     return inventario_inserir(&j->inventario, texto, horario, sala);
 }
 
-/* ================= INVENTÁRIO: lista encadeada simples ================= */
+//INVENTÁRIO: lista encadeada simples 
 
 void inventario_iniciar(Inventario *inv) {
     inv->inicio = NULL;

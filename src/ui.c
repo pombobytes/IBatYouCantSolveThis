@@ -1,8 +1,9 @@
 #include <string.h>
 #include "raylib.h"
+#include "tela.h"
 #include "ui.h"
 
-/* Quebra o texto em linhas que cabem na largura e desenha. */
+// Quebra o texto em linhas que cabem na largura e desenha. 
 static void desenhar_texto_quebrado(const char *texto, int x, int y, int largura, int tam, Color cor) {
     char linha[256] = "";
     char palavra[64];
@@ -31,7 +32,7 @@ static void desenhar_texto_quebrado(const char *texto, int x, int y, int largura
     if (linha[0]) DrawText(linha, x, yAtual, tam, cor);
 }
 
-/* ================= DIALOGO (fila) ================= */
+// DIALOGO (fila) 
 
 void dialogo_abrir(Dialogo *d, const char *quemFala, const char *falas[], int n) {
     if (n > MAX_FALAS) n = MAX_FALAS;
@@ -56,7 +57,7 @@ bool dialogo_atualizar(Dialogo *d) {
 
 void dialogo_desenhar(const Dialogo *d) {
     if (!d->aberto) return;
-    int w = GetScreenWidth(), h = GetScreenHeight();
+    int w = TELA_LARGURA, h = TELA_ALTURA;
     Rectangle caixa = { 20, h - 160, w - 40, 140 };
 
     DrawRectangleRec(caixa, Fade(BLACK, 0.9f));
@@ -67,7 +68,7 @@ void dialogo_desenhar(const Dialogo *d) {
     DrawText("E >", caixa.x + caixa.width - 50, caixa.y + caixa.height - 28, 18, LIGHTGRAY);
 }
 
-/* ================= ESCOLHA ENTRE N OPCOES ================= */
+//ESCOLHA ENTRE N OPCOES
 
 void escolha_abrir(Escolha *e, const char *titulo, const char *opcoes[], int n) {
     if (n > MAX_OPCOES) n = MAX_OPCOES;
@@ -91,7 +92,7 @@ int escolha_atualizar(Escolha *e) {
 
 void escolha_desenhar(const Escolha *e) {
     if (!e->aberta) return;
-    int w = GetScreenWidth();
+    int w = TELA_LARGURA;
     int alturaCaixa = 70 + e->n * 36;
     Rectangle caixa = { w / 2 - 220, 120, 440, alturaCaixa };
 
@@ -103,12 +104,11 @@ void escolha_desenhar(const Escolha *e) {
         int y = caixa.y + 60 + i * 36;
         bool sel = (i == e->selecionada);
         if (sel) DrawRectangle(caixa.x + 10, y - 6, caixa.width - 20, 30, Fade(GOLD, 0.25f));
-        DrawText(TextFormat("%s %s", sel ? ">" : " ", e->opcoes[i]), caixa.x + 20, y, 20,
-                 sel ? WHITE : LIGHTGRAY);
+        DrawText(TextFormat("%s %s", sel ? ">" : " ", e->opcoes[i]), caixa.x + 20, y, 20, sel ? WHITE : LIGHTGRAY);
     }
 }
 
-/* ================= AVISO ================= */
+// AVISO 
 
 static char  avisoTexto[64] = "";
 static float avisoTempo = 0;
@@ -126,7 +126,7 @@ void aviso_atualizar(float dt) {
 void aviso_desenhar(void) {
     if (avisoTempo <= 0) return;
     int tam = 24, larg = MeasureText(avisoTexto, tam);
-    int x = GetScreenWidth() / 2 - larg / 2;
+    int x = TELA_LARGURA / 2 - larg / 2;
     float alfa = avisoTempo < 0.5f ? avisoTempo / 0.5f : 1.0f;   /* some suavemente */
     DrawRectangle(x - 14, 20, larg + 28, 40, Fade(BLACK, 0.8f * alfa));
     DrawText(avisoTexto, x, 28, tam, Fade(GOLD, alfa));

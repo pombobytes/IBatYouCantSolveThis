@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "raylib.h"
+#include "tela.h"
 #include "inventario_tela.h"
 
 void inventario_tela_abrir(TelaInventario *t, bool podeMarcar) {
@@ -26,7 +27,7 @@ bool inventario_tela_atualizar(TelaInventario *t, Inventario *inv) {
 
 void inventario_tela_desenhar(const TelaInventario *t, const Inventario *inv) {
     if (!t->aberta) return;
-    int largura = GetScreenWidth(), altura = GetScreenHeight();
+    int largura = TELA_LARGURA, altura = TELA_ALTURA;
 
     DrawRectangle(0, 0, largura, altura, Fade(BLACK, 0.85f));
     DrawText("LINHA DO TEMPO", 40, 30, 28, GOLD);

@@ -28,7 +28,7 @@ typedef struct {
 typedef struct {
     Vector2 posicao;            // canto superior esquerdo da hitbox
     Sala *salaAtual;
-    Inventario inventario;     // criado junto com o jogador
+    Inventario inventario;      // criado junto com o jogador
 } Jogador;
 
 void   jogador_iniciar(Jogador *j, Sala *salaInicial, Vector2 posicao);
@@ -49,4 +49,3 @@ int    inventario_contar_marcadas(const Inventario *inv);
 void   inventario_desmarcar_todas(Inventario *inv);
 
 #endif
-
