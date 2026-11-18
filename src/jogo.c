@@ -662,8 +662,8 @@ static void desenhar_menu_controles(void)
         { "F11",          "tela cheia" },
         { "F10",          "sair" },
     };
-    int y = (int)p.y + 110;
-    for (int i = 0; i < QTD(teclas); i++, y += 38) {
+    int y = (int)p.y + 100;
+    for (int i = 0; i < QTD(teclas); i++, y += 34) {
         DrawText(teclas[i][0], (int)p.x + 90, y, 24, GOLD);
         DrawText(teclas[i][1], (int)p.x + 330, y, 24, RAYWHITE);
     }
