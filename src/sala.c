@@ -29,8 +29,8 @@ static void sala_criar_paredes(Sala *s) {
     sala_adicionar_obstaculo(s, (Rectangle){ W - T, fimPorta, T, H - T - fimPorta });// direita, abaixo da porta
 
     // porta da esquerda leva à sala anterior; a da direita, à próxima
-    s->portaAnt  = (Porta){ (Rectangle){ 0, PORTA_Y, 16, PORTA_ALTURA },      (Vector2){ 40, PORTA_Y + 45 } };
-    s->portaProx = (Porta){ (Rectangle){ W - 16, PORTA_Y, 16, PORTA_ALTURA }, (Vector2){ W - 80, PORTA_Y + 45 } };
+    s->portaAnt  = (Porta){ (Rectangle){ 0, PORTA_Y, 16, PORTA_ALTURA },      (Vector2){ 40, PORTA_Y + 45 }, false };
+    s->portaProx = (Porta){ (Rectangle){ W - 16, PORTA_Y, 16, PORTA_ALTURA }, (Vector2){ W - 80, PORTA_Y + 45 }, false };
 }
 
 static Sala *sala_nova(const char *nome, Color cor) {
@@ -49,14 +49,16 @@ static Sala *sala_nova(const char *nome, Color cor) {
     return s;
 }
 
-/* Carrega a imagem 640x360 da sala e troca as paredes genéricas pelas do desenho */
+/* Carrega a imagem da sala (640x360 ou 1920x1080) e troca as paredes genéricas pelas do desenho */
 static void sala_usar_imagem(Sala *s, const char *caminho) {
     s->fundo = LoadTexture(caminho);
-    if (s->fundo.id != 0) SetTextureFilter(s->fundo, TEXTURE_FILTER_POINT);   // pixel art sem borrar
+    // 640x360: pixel art ampliada 3x, sem borrar. 1920x1080: já está no tamanho da tela.
+    if (s->fundo.id != 0)
+        SetTextureFilter(s->fundo, s->fundo.width <= 640 ? TEXTURE_FILTER_POINT : TEXTURE_FILTER_BILINEAR);
     s->qtdObstaculos = 0;
 }
 
-/*Salão de Festas
+/* ---------- Salão de Festas (assets/Salao.png) ----------
    Portas nas laterais (degraus de madeira). Bilhete com o mordomo,
    charada da campânula no bufê e o relógio de pêndulo da bomba. */
 static void montar_salao(Sala *s) {
@@ -68,16 +70,16 @@ static void montar_salao(Sala *s) {
     sala_adicionar_obstaculo(s, (Rectangle){ 0, 432, 66, 208 });      // esquerda, abaixo da porta
     sala_adicionar_obstaculo(s, (Rectangle){ 1214, 172, 66, 113 });   // direita, acima da porta
     sala_adicionar_obstaculo(s, (Rectangle){ 1214, 432, 66, 208 });   // direita, abaixo da porta
-    s->portaAnt  = (Porta){ (Rectangle){ 0, 290, 20, 138 },    (Vector2){ 80, 345 } };
-    s->portaProx = (Porta){ (Rectangle){ 1260, 290, 20, 138 }, (Vector2){ 1164, 345 } };
+    s->portaAnt  = (Porta){ (Rectangle){ 0, 290, 20, 138 },    (Vector2){ 80, 345 }, false };
+    s->portaProx = (Porta){ (Rectangle){ 1260, 290, 20, 138 }, (Vector2){ 1164, 345 }, false };
 
     // móveis
     Rectangle relogio = { 608, 150, 64, 62 };     // base do relógio de pêndulo
     Rectangle bufe    = { 770, 165, 210, 72 };
-    Rectangle mesaSE  = { 150, 215, 135, 55 };   // mesas redondas: só a base (pés e cadeiras de baixo)
-    Rectangle mesaSD  = { 1033, 220, 135, 60 };
-    Rectangle mesaIE  = { 178, 545, 135, 65 };
-    Rectangle mesaID  = { 978, 545, 135, 65 };
+    Rectangle mesaSE  = { 135, 215, 165, 55 };   // mesas redondas: só a base (com as cadeiras)
+    Rectangle mesaSD  = { 1018, 220, 165, 60 };
+    Rectangle mesaIE  = { 163, 545, 165, 65 };
+    Rectangle mesaID  = { 963, 545, 165, 65 };
     Rectangle vasoIE  = { 66, 565, 50, 75 };
     Rectangle vasoID  = { 1165, 565, 50, 75 };
     Rectangle mordomo = { 704, 262, 32, 20 };     // pés do mordomo (sprite desenhado em jogo.c)
@@ -99,74 +101,86 @@ static void montar_salao(Sala *s) {
     sala_adicionar_interativo(s, OBJ_VASO,      vasoIE,                           "Examinar o vaso");
 }
 
-/* Jardim de Inverno (assets/jardim.png)
-   Porta dupla em cima (vai para a próxima sala) e saída embaixo (volta). */
+/* ---------- Jardim de Inverno (assets/jardim.png) ----------
+   Porta dupla em cima (vai para a próxima sala) e passagem embaixo, entre os vasos (volta).
+   Garçons em pé à esquerda; convidados nos bancos (desenhados em jogo.c). */
 static void montar_jardim(Sala *s) {
     sala_usar_imagem(s, "assets/jardim.png");
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 0, 1280, 190 });      // vidraças de cima
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 692, 1280, 28 });     // borda de baixo
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 190, 62, 502 });      // vidraça esquerda
-    sala_adicionar_obstaculo(s, (Rectangle){ 1218, 190, 62, 502 });   // vidraça direita
-    s->portaProx = (Porta){ (Rectangle){ 595, 186, 110, 14 }, (Vector2){ 632, 232 } };
-    s->portaAnt  = (Porta){ (Rectangle){ 540, 660, 200, 32 }, (Vector2){ 632, 600 } };
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 0, 1280, 205 });       // vidraças e porta de cima
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 205, 55, 515 });       // parede esquerda (trepadeiras)
+    sala_adicionar_obstaculo(s, (Rectangle){ 1225, 205, 55, 515 });    // parede direita
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 672, 535, 48 });       // parede de baixo, com a passagem no meio
+    sala_adicionar_obstaculo(s, (Rectangle){ 745, 672, 535, 48 });
+    s->portaProx = (Porta){ (Rectangle){ 595, 200, 90, 14 },  (Vector2){ 622, 232 }, false };
+    s->portaAnt  = (Porta){ (Rectangle){ 540, 690, 200, 30 }, (Vector2){ 622, 620 }, false };
 
-    Rectangle fonte = { 505, 320, 295, 245 };
+    Rectangle fonte = { 525, 318, 232, 186 };
     sala_adicionar_obstaculo(s, fonte);
-    sala_adicionar_obstaculo(s, (Rectangle){ 438, 345, 37, 150 });    // flores ao lado da fonte
-    sala_adicionar_obstaculo(s, (Rectangle){ 790, 345, 37, 150 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 262, 255, 140, 60 });   // mesas: só a base
-    sala_adicionar_obstaculo(s, (Rectangle){ 880, 255, 130, 65 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 950, 555, 120, 70 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 60, 390, 230, 72 });     // balcão do bar (em L)
-    sala_adicionar_obstaculo(s, (Rectangle){ 60, 462, 100, 90 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 60, 550, 318, 90 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 90, 200, 95, 100 });     // plantas
-    sala_adicionar_obstaculo(s, (Rectangle){ 485, 190, 50, 35 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 760, 190, 55, 35 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 1040, 190, 120, 100 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 1190, 270, 40, 90 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 80, 640, 110, 52 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 205, 640, 70, 52 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 445, 640, 50, 52 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 800, 640, 50, 52 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 1110, 600, 100, 92 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 160, 462, 140, 88 });   // atrás do balcão (garçons)
+    sala_adicionar_obstaculo(s, (Rectangle){ 95, 185, 190, 90 });      // canteiros de cima
+    sala_adicionar_obstaculo(s, (Rectangle){ 1000, 185, 190, 90 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 298, 215, 165, 50 });     // bancos de cima (só a base)
+    sala_adicionar_obstaculo(s, (Rectangle){ 822, 215, 165, 50 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 475, 195, 70, 50 });      // vasos ao lado da porta
+    sala_adicionar_obstaculo(s, (Rectangle){ 745, 195, 65, 50 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 65, 380, 70, 85 });       // pedestais com flores
+    sala_adicionar_obstaculo(s, (Rectangle){ 1150, 380, 70, 85 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 40, 560, 248, 112 });     // canteiros de baixo
+    sala_adicionar_obstaculo(s, (Rectangle){ 993, 560, 248, 112 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 295, 625, 165, 50 });     // bancos de baixo (só a base)
+    sala_adicionar_obstaculo(s, (Rectangle){ 822, 625, 165, 50 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 190, 415, 110, 45 });     // pés dos garçons
 
-    sala_adicionar_interativo(s, OBJ_GARCONS, (Rectangle){ 60, 390, 320, 250 }, "Conversar com os garçons do bar");
-    sala_adicionar_interativo(s, OBJ_FONTE,   fonte,                              "Examinar a fonte");
+    sala_adicionar_interativo(s, OBJ_GARCONS, (Rectangle){ 180, 340, 130, 120 }, "Conversar com os garçons");
+    sala_adicionar_interativo(s, OBJ_FONTE,   fonte,                               "Examinar a fonte");
 }
 
-/* Galeria de Arte 
-   Porta dupla em cima (próxima sala) e tapete de saída embaixo (volta). */
+/* ---------- Galeria de Arte (assets/galeria.png) ----------
+   Os 6 quadros do leilão ficam na parede de cima. O desenho não tem porta,
+   então as passagens são nas laterais e o jogo marca elas na tela. */
 static void montar_galeria(Sala *s) {
     sala_usar_imagem(s, "assets/galeria.png");
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 0, 1280, 195 });      // parede dos quadros
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 640, 595, 80 });      // parede de baixo, com a saída no meio
-    sala_adicionar_obstaculo(s, (Rectangle){ 715, 640, 565, 80 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 195, 12, 445 });      // laterais
-    sala_adicionar_obstaculo(s, (Rectangle){ 1268, 195, 12, 445 });
-    s->portaProx = (Porta){ (Rectangle){ 598, 192, 114, 14 }, (Vector2){ 637, 232 } };
-    s->portaAnt  = (Porta){ (Rectangle){ 598, 690, 114, 30 }, (Vector2){ 637, 590 } };
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 0, 1280, 250 });       // parede dos quadros
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 668, 1280, 52 });      // parede de baixo
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 250, 36, 180 });       // laterais, com a passagem no meio (y 430..550)
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 550, 36, 118 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 1244, 250, 36, 180 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 1244, 550, 36, 118 });
+    s->portaAnt  = (Porta){ (Rectangle){ 0, 430, 20, 120 },    (Vector2){ 50, 476 },   true };
+    s->portaProx = (Porta){ (Rectangle){ 1260, 430, 20, 120 }, (Vector2){ 1194, 476 }, true };
 
-    Rectangle divisoriaE = { 155, 280, 378, 180 };   // painéis com quadros e cordões
-    Rectangle divisoriaD = { 770, 280, 372, 180 };
-    sala_adicionar_obstaculo(s, divisoriaE);
-    sala_adicionar_obstaculo(s, divisoriaD);
-    sala_adicionar_obstaculo(s, (Rectangle){ 0, 195, 50, 60 });       // armário
-    sala_adicionar_obstaculo(s, (Rectangle){ 390, 175, 55, 60 });     // bustos
-    sala_adicionar_obstaculo(s, (Rectangle){ 865, 175, 55, 60 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 50, 340, 60, 115 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 1188, 340, 60, 115 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 390, 520, 55, 120 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 843, 520, 55, 120 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 520, 190, 55, 22 });     // vasos
-    sala_adicionar_obstaculo(s, (Rectangle){ 745, 190, 55, 22 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 1228, 195, 40, 35 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 5, 480, 45, 160 });
-    sala_adicionar_obstaculo(s, (Rectangle){ 1225, 610, 43, 30 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 30, 245, 150, 50 });      // bustos com cordões
+    sala_adicionar_obstaculo(s, (Rectangle){ 1095, 245, 155, 50 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 36, 385, 60, 40 });       // vasos (só a base)
+    sala_adicionar_obstaculo(s, (Rectangle){ 1185, 385, 60, 40 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 36, 625, 60, 43 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 1185, 625, 60, 43 });
+    sala_adicionar_obstaculo(s, (Rectangle){ 242, 600, 220, 50 });     // bancos (só a base)
+    sala_adicionar_obstaculo(s, (Rectangle){ 818, 600, 220, 50 });
 
-    sala_adicionar_interativo(s, OBJ_QUADROS, divisoriaE, "Examinar os quadros do leilão");
+    sala_adicionar_interativo(s, OBJ_QUADROS, (Rectangle){ 215, 50, 850, 205 }, "Examinar os quadros do leilão");
+}
 
+/* ---------- Porão secreto (assets/porao.png) ----------
+   Escada no canto de cima à esquerda (volta ao jardim) e corredor embaixo (segue o anel).
+   O Otávio é colocado por jogo_abrir_porao. */
+void sala_montar_porao(Sala *s) {
+    sala_usar_imagem(s, "assets/porao.png");
+    if (s->fundo.id == 0) return;   // sem imagem: fica com as paredes genéricas
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 0, 55, 720 });         // parede esquerda
+    sala_adicionar_obstaculo(s, (Rectangle){ 1228, 0, 52, 720 });      // parede direita
+    sala_adicionar_obstaculo(s, (Rectangle){ 55, 0, 120, 200 });       // topo da escada
+    sala_adicionar_obstaculo(s, (Rectangle){ 175, 0, 40, 300 });       // parede ao lado da escada
+    sala_adicionar_obstaculo(s, (Rectangle){ 215, 0, 1013, 248 });     // estante, mesa, armário e lençóis de cima
+    sala_adicionar_obstaculo(s, (Rectangle){ 945, 248, 50, 12 });      // caixotes de cima
+    sala_adicionar_obstaculo(s, (Rectangle){ 1160, 285, 60, 60 });     // vaso da direita
+    sala_adicionar_obstaculo(s, (Rectangle){ 220, 290, 75, 150 });     // caixotes da esquerda
+    sala_adicionar_obstaculo(s, (Rectangle){ 55, 345, 160, 295 });     // lençol, barril e caixotes da esquerda
+    sala_adicionar_obstaculo(s, (Rectangle){ 235, 625, 65, 35 });      // vaso de baixo
+    sala_adicionar_obstaculo(s, (Rectangle){ 1088, 370, 140, 270 });   // lençol, caixotes e barril da direita
+    sala_adicionar_obstaculo(s, (Rectangle){ 0, 650, 600, 70 });       // parede de baixo, com o corredor no meio
+    sala_adicionar_obstaculo(s, (Rectangle){ 1000, 650, 280, 70 });
+    s->portaAnt  = (Porta){ (Rectangle){ 60, 196, 115, 14 },  (Vector2){ 98, 296 }, false };
+    s->portaProx = (Porta){ (Rectangle){ 600, 690, 400, 30 }, (Vector2){ 782, 600 }, true };
 }
 
 Sala *salas_criar(void) {
