@@ -58,7 +58,7 @@ static void sala_usar_imagem(Sala *s, const char *caminho) {
     s->qtdObstaculos = 0;
 }
 
-/* ---------- Salão de Festas (assets/Salao.png) ----------
+/* Salão de Festas
    Portas nas laterais (degraus de madeira). Bilhete com o mordomo,
    charada da campânula no bufê e o relógio de pêndulo da bomba. */
 static void montar_salao(Sala *s) {
@@ -101,7 +101,7 @@ static void montar_salao(Sala *s) {
     sala_adicionar_interativo(s, OBJ_VASO,      vasoIE,                           "Examinar o vaso");
 }
 
-/* ---------- Jardim de Inverno (assets/jardim.png) ----------
+/* Jardim de Inverno 
    Porta dupla em cima (vai para a próxima sala) e passagem embaixo, entre os vasos (volta).
    Garçons em pé à esquerda; convidados nos bancos (desenhados em jogo.c). */
 static void montar_jardim(Sala *s) {
@@ -134,7 +134,7 @@ static void montar_jardim(Sala *s) {
     sala_adicionar_interativo(s, OBJ_FONTE,   fonte,                               "Examinar a fonte");
 }
 
-/* ---------- Galeria de Arte (assets/galeria.png) ----------
+/* Galeria de Arte
    Os 6 quadros do leilão ficam na parede de cima. O desenho não tem porta,
    então as passagens são nas laterais e o jogo marca elas na tela. */
 static void montar_galeria(Sala *s) {
@@ -160,7 +160,7 @@ static void montar_galeria(Sala *s) {
     sala_adicionar_interativo(s, OBJ_QUADROS, (Rectangle){ 215, 50, 850, 205 }, "Examinar os quadros do leilão");
 }
 
-/* ---------- Porão secreto (assets/porao.png) ----------
+/*Porão secreto
    Escada no canto de cima à esquerda (volta ao jardim) e corredor embaixo (segue o anel).
    O Otávio é colocado por jogo_abrir_porao. */
 void sala_montar_porao(Sala *s) {
