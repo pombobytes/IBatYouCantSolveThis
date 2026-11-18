@@ -43,6 +43,7 @@ typedef struct {
 typedef struct {
     Rectangle gatilho;
     Vector2 chegada;
+    bool marcar;      // true = a porta não aparece no desenho; o jogo desenha uma passagem
 } Porta;
 
 typedef struct Sala{
@@ -69,4 +70,8 @@ Sala *sala_inserir_depois(Sala *ref, const char *nome, Color cor);
    Devolvem false se o vetor já estiver cheio. */
 bool  sala_adicionar_obstaculo(Sala *s, Rectangle r);
 bool  sala_adicionar_interativo(Sala *s, ObjetoId id, Rectangle area, const char *rotulo);
+
+/* Monta o porão secreto (imagem, paredes, porta da escada e do corredor).
+   Chamada por jogo_abrir_porao depois de inserir a sala no anel. */
+void  sala_montar_porao(Sala *s);
 #endif

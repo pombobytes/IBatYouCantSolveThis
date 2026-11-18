@@ -750,8 +750,8 @@ static void desenhar_npc(Texture2D folha, Rectangle pes) {
 // Personagens que aparecem em cada sala (os pés coincidem com obstáculos de sala.c / jogo_abrir_porao)
 #define PES_MORDOMO ((Rectangle){ 704, 262, 32, 20 })
 #define PES_OTAVIO  ((Rectangle){ 900, 360, 32, 24 })
-#define PES_GARCOM1 ((Rectangle){ 178, 500, 32, 24 })
-#define PES_GARCOM2 ((Rectangle){ 238, 515, 32, 24 })
+#define PES_GARCOM1 ((Rectangle){ 205, 428, 32, 24 })
+#define PES_GARCOM2 ((Rectangle){ 262, 434, 32, 24 })
 
 /* ---------- convidados sentados (só decoração, sem colisão nem diálogo) ----------
    'assento' é o ponto do assento da cadeira: centro em x, altura do quadril em y.
@@ -768,8 +768,9 @@ static const Convidado convidados[] = {
     { 0, 1, { 1163, 226 }, true },   // salão, mesa de cima à direita
     { 0, 2, { 180, 560 }, false },   // salão, mesa de baixo à esquerda
     { 0, 0, { 1110, 568 }, true },   // salão, mesa de baixo à direita
-    { 1, 1, { 266, 272 }, false },   // jardim, mesa de cima à esquerda
-    { 1, 2, { 1004, 276 }, true },   // jardim, mesa de cima à direita
+    { 1, 1, { 355, 250 }, false },   // jardim, banco de cima à esquerda
+    { 1, 2, { 935, 250 }, true },    // jardim, banco de cima à direita
+    { 1, 0, { 880, 660 }, false },   // jardim, banco de baixo à direita
 };
 #define LINHA_QUADRIL 26   // linha da folha 32x32 onde o corpo termina (corta as pernas)
 
@@ -794,7 +795,7 @@ static void desenhar_personagens(const Jogo *jogo) {
     } else if (sala == jogo->salas->proxSala) {                  // jardim: garçons atrás do balcão
         folhas[qtd] = spriteGarcom; pes[qtd++] = PES_GARCOM1;
         folhas[qtd] = spriteGarcom2; pes[qtd++] = PES_GARCOM2;
-    } else if (jogo->poraoAberto && sala->fundo.id == 0) {       // porão
+    } else if (jogo->poraoAberto && sala == jogo->salas->proxSala->proxSala) {   // porão (logo depois do jardim)
         folhas[qtd] = spriteOtavio; pes[qtd++] = PES_OTAVIO;
     }
 
@@ -824,13 +825,28 @@ static void desenhar_explorando(const Jogo *jogo)
                        (Rectangle){ 0, 0, (float)sala->fundo.width, (float)sala->fundo.height },
                        (Rectangle){ 0, 0, TELA_LARGURA, TELA_ALTURA }, (Vector2){ 0, 0 }, 0, WHITE);
     } else {
-        // sala sem imagem (porão): cor de fundo, paredes e móveis em blocos
+        // sala sem imagem: cor de fundo, paredes e móveis em blocos
         DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, sala->corFundo);
         for (int i = 0; i < sala->qtdObstaculos; i++) {
             DrawRectangleRec(sala->obstaculos[i], i < 6 ? ColorBrightness(sala->corFundo, -0.55f) : DARKGRAY);
         }
         DrawRectangleRec(sala->portaAnt.gatilho,  Fade(GOLD, 0.35f));
         DrawRectangleRec(sala->portaProx.gatilho, Fade(GOLD, 0.35f));
+    }
+
+    // passagens que não aparecem no desenho (ex.: laterais da galeria): faixa escura + seta
+    const Porta *portas[2] = { &sala->portaAnt, &sala->portaProx };
+    for (int i = 0; i < 2; i++) {
+        if (!portas[i]->marcar || sala->fundo.id == 0) continue;
+        Rectangle g = portas[i]->gatilho;
+        bool vertical = g.height > g.width;   // porta na lateral
+        Rectangle faixa = vertical ? (Rectangle){ g.x < TELA_LARGURA / 2 ? 0 : TELA_LARGURA - 48, g.y, 48, g.height }
+                                   : (Rectangle){ g.x, TELA_ALTURA - 48, g.width, 48 };
+        DrawRectangleRec(faixa, Fade(BLACK, 0.6f));
+        DrawRectangleLinesEx(faixa, 2, Fade(GOLD, 0.7f));
+        const char *seta = vertical ? (g.x < TELA_LARGURA / 2 ? "<" : ">") : "v";
+        int ls = MeasureText(seta, 44);
+        DrawText(seta, (int)(faixa.x + faixa.width / 2 - ls / 2), (int)(faixa.y + faixa.height / 2 - 22), 44, GOLD);
     }
 
     if (mostrarColisao) {   // F3
@@ -978,9 +994,8 @@ void jogo_abrir_porao(Jogo *jogo) {
     Sala *jardim = jogo->salas->proxSala;
     Sala *porao  = sala_inserir_depois(jardim, "Porão", (Color){ 12, 15, 25, 255 });
     if(porao != NULL){
-        // caixas de contrabando e o culpado com o detonador
-        sala_adicionar_obstaculo(porao, (Rectangle){ 300, 150, 90, 90 });
-        sala_adicionar_obstaculo(porao, (Rectangle){ 700, 500, 90, 90 });
+        sala_montar_porao(porao);   // imagem, paredes e portas (sala.c)
+        // o culpado com o detonador
         Rectangle otavio = { 900, 360, 32, 24 };   // pés do Otávio (sprite desenhado em jogo.c)
         sala_adicionar_obstaculo(porao, otavio);
         sala_adicionar_interativo(porao, OBJ_OTAVIO, otavio, "Confrontar Otávio");
