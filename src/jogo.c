@@ -781,9 +781,7 @@ static void desenhar_explorando(const Jogo *jogo)
 
     desenhar_personagens(jogo);
 
-    // nome da sala no canto superior esquerdo, numa faixa escura para ler sobre a arte
-    int larguraNome = MeasureText(sala->nome, 30);
-    DrawRectangle(24, 26, larguraNome + 32, 46, Fade(BLACK, 0.6f));
+    // nome da sala no canto superior esquerdo
     DrawText(sala->nome, 40, 34, 30, WHITE);
 
     //interativo aviso (acima da cabeça do Bruno, sem sair da tela)
@@ -800,8 +798,7 @@ static void desenhar_explorando(const Jogo *jogo)
         DrawText(aviso, x, y, 20, GOLD);
     }
 
-    int larguraRelogio = MeasureText("00:00", 40);
-    DrawRectangle(larguraTela - 40 - larguraRelogio - 16, 26, larguraRelogio + 32, 50, Fade(BLACK, 0.6f));
+    //desenha relogio
     desenhar_relogio(jogo, larguraTela - 40, 34);
 }
 
