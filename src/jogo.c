@@ -21,6 +21,10 @@ static Texture2D spriteGarcom;     // garcom.png (mesmo formato do mordomo)
 static Texture2D spriteGarcom2;    // garcom2.png (outro garçom, cores diferentes)
 static Texture2D spriteConvidado[3]; // convidado1..3.png: convidados sentados nas mesas
 static bool mostrarColisao = false; // F3: mostra as caixas de colisão (para ajustar o mapa)
+static Music musica;               // trilha de fundo em loop (assets/musica.ogg)
+static bool musicaOk = false;      // false se não houver som (ex.: WSL sem áudio): o jogo segue mudo
+static bool musicaMuda = false;    // tecla M
+#define VOLUME_MUSICA 0.5f
 
 static Texture2D carregar_pixel_art(const char *caminho) {
     Texture2D t = LoadTexture(caminho);
@@ -39,6 +43,17 @@ void jogo_carregar_recursos(void) {
     for (int i = 0; i < 3; i++)
         spriteConvidado[i] = carregar_pixel_art(TextFormat("assets/convidado%d.png", i + 1));
     jogador_anim_iniciar((Vector2){ 0, 0 });
+
+    InitAudioDevice();
+    if (IsAudioDeviceReady()) {
+        musica = LoadMusicStream("assets/musica.ogg");
+        musicaOk = (musica.frameCount > 0);
+        if (musicaOk) {
+            musica.looping = true;
+            SetMusicVolume(musica, VOLUME_MUSICA);
+            PlayMusicStream(musica);
+        }
+    }
 }
 
 void jogo_liberar_recursos(void) {
@@ -51,6 +66,9 @@ void jogo_liberar_recursos(void) {
     for (int i = 0; i < 3; i++)
         if (spriteConvidado[i].id != 0) UnloadTexture(spriteConvidado[i]);
     jogador_anim_finalizar();
+    if (musicaOk) UnloadMusicStream(musica);
+    musicaOk = false;
+    if (IsAudioDeviceReady()) CloseAudioDevice();
 }
 
 /* Botões do menu, por cima dos botões desenhados em assets/menu.png
@@ -563,6 +581,15 @@ static void alternar_pausa(Jogo *jogo) {
 
 void jogo_atualizar(Jogo *jogo)
 {
+    // música: precisa ser alimentada todo frame; M liga/desliga (ideia da Leticia)
+    if (musicaOk) {
+        UpdateMusicStream(musica);
+        if (IsKeyPressed(KEY_M)) {
+            musicaMuda = !musicaMuda;
+            SetMusicVolume(musica, musicaMuda ? 0.0f : VOLUME_MUSICA);
+        }
+    }
+
     // P vale em qualquer estado e vem antes do relógio, para a pausa já congelar este frame
     if (IsKeyPressed(KEY_P)) {
         alternar_pausa(jogo);
@@ -630,10 +657,11 @@ static void desenhar_menu_controles(void)
         { "ESPAÇO",       "enviar a acusação" },
         { "ESC",          "fechar telas" },
         { "P",            "pausar" },
+        { "M",            "música liga/desliga" },
         { "F11",          "tela cheia" },
     };
     int y = (int)p.y + 110;
-    for (int i = 0; i < QTD(teclas); i++, y += 42) {
+    for (int i = 0; i < QTD(teclas); i++, y += 38) {
         DrawText(teclas[i][0], (int)p.x + 90, y, 24, GOLD);
         DrawText(teclas[i][1], (int)p.x + 330, y, 24, RAYWHITE);
     }
